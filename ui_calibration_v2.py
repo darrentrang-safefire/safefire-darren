@@ -122,6 +122,7 @@ def main_menu():
                     cookgrid_info = {"key":"spots"}
                     cookgrid.cookgrid_temp(cookgrid_info['key'])
                 if ok == 2:
+                    pre_calibration(ok)
                     autogrid_gain_info = {"resume": None, "overwrite": None, "key": ""}
                     get_autogrid_info(autogrid_gain_info)
                     if len(autogrid_gain_info["key"]) > 0:
