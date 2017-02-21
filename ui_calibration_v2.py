@@ -22,10 +22,19 @@ pr = cProfile.Profile()
 pr.enable()
 
 
+def run_command(command):
+    command += "\n" #need this because prompt asks for "more?"
+    # print r'running command: ', (command.encode('string-escape'))
+    process = subprocess.Popen('cmd.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    stdout, stderr = process.communicate(command)
+    if command != '\n':
+        process.stdout.flush()
+        print stdout
+
 def pre_calibration(input):
     if input >= 1 and input <= 6:
-        print "start motor, start progress, timeout 10"
-        print "Calibration will begin in 10 seconds...Ctrl-C to cancel"
+        run_command("start motor")
+        run_command("start showprogress")
         time.sleep(10);
 
 def get_autocal_info(autocal_info):
@@ -215,18 +224,6 @@ def main_menu():
             pass
         except Exception as ex:
             print ex.message, ex.code
-
-
-
-
-def run_command(command):
-    command += "\n" #need this because prompt asks for "more?"
-    # print r'running command: ', (command.encode('string-escape'))
-    process = subprocess.Popen('cmd.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    stdout, stderr = process.communicate(command)
-    if command != '\n':
-        process.stdout.flush()
-        print stdout
 
 
 def main(args):
