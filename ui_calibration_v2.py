@@ -251,7 +251,7 @@ def main(args):
         # NIR parameter tweaker
         time = misc.now_string()
         print time
-        log_file.write(time + "\n")
+        log_file.write(time + ": Starting UI" + "\n")
 
         main_menu(log_file)
 
