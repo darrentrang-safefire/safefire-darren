@@ -32,10 +32,11 @@ def run_command(command):
         print stdout
 
 def pre_calibration(input):
-    if input >= 1 and input <= 6:
-        run_command("start motor")
-        run_command("start showprogress")
-        time.sleep(10);
+    print "doing precalibration stuff"
+    # if input >= 1 and input <= 6:
+    #     run_command("start motor")
+    #     run_command("start showprogress")
+    #     time.sleep(10);
 
 def get_autocal_info(autocal_info):
     camSN = raw_input("Enter Camera Serial Number: ")
@@ -113,14 +114,17 @@ def get_cookgrid_temp_info(cookgrid_info):
     temp_key = raw_input("Enter key value (from meta.data): ").strip()
     cookgrid_info['key'] = temp_key
 
-def handle_error(code):
+def handle_error(code, log_file):
     #sys.exit(arg) --> arg can be an int or a string
     if type(code) is int and code == 909:
-        print "meta.data file found with no resume or overwrite flag. delete this file or set resume or overwrite flag."
+        msg = "meta.data file found with no resume or overwrite flag. delete this file or set resume or overwrite flag."
+        print msg
+        log_file.write(misc.now_string() + " :" + msg + "\n")
     if type(code) is str:
         print code
+        log_file.write(misc.now_string() + " :" + code + "\n")
 
-def main_menu():
+def main_menu(log_file):
     menu = '******************************************\n'
     menu += '* Choose command to run:                 *\n'
     menu += '* 1. Full Calibration                    *\n'
@@ -176,7 +180,7 @@ def main_menu():
                     cookgrid_info = {"key":"spots"}
                     cookgrid.cookgrid_temp(cookgrid_info['key'])
                 if ok == 2:
-                    pre_calibration(ok)
+                    #pre_calibration(ok)
                     autocal_info = {"cal": "", "camSN": ""}
                     get_autocal_info_all(autocal_info)
                     autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"])
@@ -211,28 +215,45 @@ def main_menu():
             else:
                 print "Error: Please pick 0-7 only"
         except RuntimeError as rte:
-            print "Caught RuntimeError in ui_calibration_v2.py"
+            msg = "Caught RuntimeError in ui_calibration_v2.py"
+            err_msg = rte.message
+            err_args = rte.args.__str__()
+            print msg
             print rte.message
-            print rte.args
+            log_file.write(misc.now_string() + " :" + msg + "\n")
+            log_file.write(misc.now_string() + " :" + err_msg + "\n")
+            log_file.write(misc.now_string() + " :" + err_args + "\n")
             pass
         except ValueError as ve:
-            print "Error: Enter numbers only or (q/Q) to quit"
-            print ve.message
+            msg = "Error: Enter numbers only or (q/Q) to quit"
+            err_msg = ve.message
+            err_args = ve.args.__str__()
+            log_file.write(misc.now_string() + " :" + msg + "\n")
+            log_file.write(misc.now_string() + " :" + err_msg + "\n")
+            log_file.write(misc.now_string() + " :" + err_args + "\n")
             pass
         except SystemExit as e:
-            handle_error(e.code)
+            handle_error(e.code, log_file)
             pass
         except Exception as ex:
+            err_msg = ex.message
+            err_args = ex.args.__str__()
             print ex.message, ex.code
+            log_file.write(misc.now_string() + " :" + err_msg + "\n")
+            log_file.write(misc.now_string() + " :" + err_args + "\n")
 
 
 def main(args):
     try:
+        log_file = open('ui_calibration.log', 'a')
         # bad pixels
         # Firmware updater
         # NIR parameter tweaker
+        time = misc.now_string()
+        print time
+        log_file.write(time + "\n")
 
-        main_menu()
+        main_menu(log_file)
 
         # autogrid.autogrid(resume=None, overwrite=None, key="gain")
         # cookgrid.cookgain("gains")
@@ -262,6 +283,8 @@ def main(args):
         file.write(s.getvalue())
         file.write('\n\n\n')
         file.write(s2.getvalue())
+
+        log_file.close()
 
 
 if __name__ == '__main__':
