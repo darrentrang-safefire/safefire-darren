@@ -100,7 +100,7 @@ def get_autogrid_info(autogrid_info):
     else:
         overwrite = False
 
-    key = raw_input("Enter key value (from meta.data ie. 'gain' or 'spot'"): ").strip()
+    key = raw_input("Enter key value (from meta.data ie. 'gain' or 'spot': ").strip()
 
     autogrid_info['key'] = key
     autogrid_info['resume'] = resume
