@@ -208,7 +208,7 @@ class CalUI:
         menu += '* 1. Full Calibration                    *\n'
         menu += '* 2. Autocal                             *\n'
         menu += '* 3. Autogrid                            *\n'
-        menu += '* 4. Cookgrid Gains                      *\n'
+        menu += '* 4. Cookgrid Gain                       *\n'
         menu += '* 5. Cookgrid Temp                       *\n'
         menu += '* 6. Make Metamap                        *\n'
         menu += '* 7. Exit                                *\n'
@@ -320,9 +320,10 @@ class CalUI:
             except Exception as ex:
                 err_msg = ex.message
                 err_args = ex.args.__str__()
-                print ex.message, ex.code
+                print ex.message
                 self.log(err_msg)
                 self.log(err_args)
+                pass
 
     def close_log_file(self):
         self.log_file.close()
