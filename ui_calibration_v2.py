@@ -29,8 +29,7 @@ class CalUI:
         self.log_file.write(time + " : Starting UI" + "\n")
         md = MetaData()
         if not md.load():
-            self.handle_error("unable to load meta.data")
-            sys.exit(1)
+            self.handle_error("WARNING: No meta.data file found")
         self.md = md
 
     def run(self):
@@ -60,14 +59,19 @@ class CalUI:
 
         if hasattr(self.md, temp_completed_key):
             key_completed = getattr(self.md, temp_completed_key)
+        else:
+            return "no completed key"
+
+        if(len(key_completed) < len(key_list)):
+            return "continue or overwrite"
 
 
         for i in range(len(key_list)):
             found = key_completed.get(key_list[i])
             if found is None:
-                return False
+                return "continue or overwrite"
 
-        return True
+        return "completed"
 
 
     def run_command(self, command):
@@ -136,23 +140,30 @@ class CalUI:
 
 
     def get_autogrid_info(self, autogrid_info):
-        # resume = raw_input("Resume? (y/n): ").strip()
-        # if resume == "y" or resume == "Y":
-        #     resume = True
-        # else:
-        #     resume = False
-        #
         overwrite = None
         resume = None
 
         key = raw_input("Enter key value (from meta.data ie. 'gain' or 'spot'): ").strip()
         completed = self.isKeyCompleted(key)
-        if completed == True:
+        if completed == "completed":
             overwrite = raw_input("'{0}s' was already completed. Overwrite? (y/n): ".format(key)).strip()
             if overwrite == "y" or overwrite == "Y":
                 overwrite = True
             else:
                 overwrite = False
+        elif completed == "continue or overwrite":
+            choice = raw_input("'{0}s_completed' found partially completed. Resume/Overwrite or Cancel? (r/o/c): ".format(key)).lower().strip()
+            if choice == "r":
+                resume = True
+            elif choice == "o":
+                overwrite = True
+            elif choice == "c":
+                sys.exit("user chose to cancel current operation")
+        elif completed == "no completed key":
+            #first time running autogrid on this key
+            overwrite = None
+            resume = None
+
 
         autogrid_info['key'] = key
         autogrid_info['resume'] = resume
@@ -285,7 +296,6 @@ class CalUI:
 
     def close_log_file(self):
         self.log_file.close()
-
 
 def main(args):
     try:
