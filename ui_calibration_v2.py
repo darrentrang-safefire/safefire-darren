@@ -18,6 +18,9 @@ import metamap
 import misc
 from metadata import MetaData
 
+#error code 9: user chose to cancel current operation
+#error code 101: warning no meta.data file found during initial startup
+
 
 pr = cProfile.Profile()
 pr.enable()
@@ -40,7 +43,13 @@ class CalUI:
         if type(code) is int and code == 909:
             msg = "meta.data file found with no resume or overwrite flag. delete this file or set resume or overwrite flag."
             print msg
-            self.log_file.write(misc.now_string() + " :" + msg + "\n")
+            self.log_file.write(misc.now_string() + " : " + msg + "\n")
+        elif type(code) is int and code == 101:
+            msg = "No meta.data file detected. Does meta.data file have attribute 'serial'?"
+            self.log_file.write(misc.now_string() + " : " + msg + "\n")
+        elif type(code) is int and code == 9:
+            msg = "User chose to cancel current operation."
+            self.log_file.write(misc.now_string() + " : " + msg + "\n")
         if type(code) is str:
             print code
             self.log_file.write(misc.now_string() + " : " + code + "\n")
@@ -126,17 +135,19 @@ class CalUI:
                 print ve.message
                 pass
 
+        if hasattr(self.md, "serial"):
+            resume = raw_input("meta.data file detected. Resume/Overwrite or Cancel? (r/o/c): ")
+        else:
+            self.handle_error(101)
 
-        resume = raw_input("Do you want to resume or overwrite? (r/o/n for neither): ")
         if resume.upper() == 'R':
             autocal_info["resume"] = True
             autocal_info["overwrite"] = False
         elif resume.upper() == "O":
             autocal_info["resume"] = False
             autocal_info["overwrite"] = True
-        else:
-            autocal_info["resume"] = False
-            autocal_info["overwrite"] = False
+        elif resume.upper() == "C":
+            sys.exit(9)
 
 
     def get_autogrid_info(self, autogrid_info):
@@ -158,7 +169,7 @@ class CalUI:
             elif choice == "o":
                 overwrite = True
             elif choice == "c":
-                sys.exit("user chose to cancel current operation")
+                sys.exit(9)
         elif completed == "no completed key":
             #first time running autogrid on this key
             overwrite = None
@@ -197,10 +208,12 @@ class CalUI:
                 print menu
                 ok = raw_input(prompt)
                 if ok == 'q' or ok == 'Q':
+                    self.log_file.write("\n" + misc.now_string() + " :" + "Goodbye!" + "\n")
                     print '\nGoodbye!'
                     return False
                 ok = int(ok)
                 if ok >= 0 and ok <= 7:
+                    self.log_file.write(misc.now_string() + " :" + " main menu. user chose: {0}".format(ok) + "\n")
 
                     if ok == 0:
                         custom_command = raw_input("Enter custom command: ")
