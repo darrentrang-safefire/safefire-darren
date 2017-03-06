@@ -29,11 +29,23 @@ class CalUI:
     def __init__(self):
         self.log_file =  open('ui_calibration.log', 'a')
         time = misc.now_string()
-        self.log_file.write(time + " : Starting UI" + "\n")
+        self.log("Starting UI")
+        self.load_md()
+
+    def load_md(self):
+        time = misc.now_string()
+        self.log("Attempting to load meta data")
         md = MetaData()
         if not md.load():
             self.handle_error("WARNING: No meta.data file found")
+        else:
+            self.log("meta.data successfully loaded")
+
         self.md = md
+
+    def log(self, msg):
+        time = misc.now_string()
+        self.log_file.write(time + " : " + msg + "\n")
 
     def run(self):
         self.main_menu()
@@ -43,16 +55,16 @@ class CalUI:
         if type(code) is int and code == 909:
             msg = "meta.data file found with no resume or overwrite flag. delete this file or set resume or overwrite flag."
             print msg
-            self.log_file.write(misc.now_string() + " : " + msg + "\n")
+            self.log(msg)
         elif type(code) is int and code == 101:
-            msg = "No meta.data file detected. Does meta.data file have attribute 'serial'?"
-            self.log_file.write(misc.now_string() + " : " + msg + "\n")
+            msg = "No meta.data file detected. If this is the first time running Autocal, ignore this message. Does meta.data file have attribute 'serial'?"
+            self.log(msg)
         elif type(code) is int and code == 9:
             msg = "User chose to cancel current operation."
-            self.log_file.write(misc.now_string() + " : " + msg + "\n")
+            self.log(msg)
         if type(code) is str:
             print code
-            self.log_file.write(misc.now_string() + " : " + code + "\n")
+            self.log(code)
 
     def isKeyCompleted(self, key):
         temp_key = key + "s"
@@ -135,6 +147,7 @@ class CalUI:
                 print ve.message
                 pass
 
+        resume = ""
         if hasattr(self.md, "serial"):
             resume = raw_input("meta.data file detected. Resume/Overwrite or Cancel? (r/o/c): ")
         else:
@@ -205,15 +218,19 @@ class CalUI:
         prompt = '*>>> '
         while True:
             try:
+                if not hasattr(self.md, "serial"):
+                    # try to load meta data
+                    self.load_md()
+
                 print menu
                 ok = raw_input(prompt)
                 if ok == 'q' or ok == 'Q':
-                    self.log_file.write("\n" + misc.now_string() + " :" + "Goodbye!" + "\n")
+                    self.log("Goodbye!")
                     print '\nGoodbye!'
                     return False
                 ok = int(ok)
                 if ok >= 0 and ok <= 7:
-                    self.log_file.write(misc.now_string() + " :" + " main menu. user chose: {0}".format(ok) + "\n")
+                    self.log("Main Menu. User chose: {0}".format(ok))
 
                     if ok == 0:
                         custom_command = raw_input("Enter custom command: ")
@@ -246,7 +263,7 @@ class CalUI:
                         cookgrid.cookgrid_temp(cookgrid_info['key'])
                     if ok == 2:
                         #self.pre_calibration(ok)
-                        autocal_info = {"cal": "", "camSN": ""}
+                        autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
                         self.get_autocal_info_all(autocal_info)
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"])
                     if ok == 3:
@@ -285,17 +302,17 @@ class CalUI:
                 err_args = rte.args.__str__()
                 print msg
                 print rte.message
-                self.log_file.write(misc.now_string() + " :" + msg + "\n")
-                self.log_file.write(misc.now_string() + " :" + err_msg + "\n")
-                self.log_file.write(misc.now_string() + " :" + err_args + "\n")
+                self.log(msg)
+                self.log(err_msg)
+                self.log(err_args)
                 pass
             except ValueError as ve:
                 msg = "Error: Enter numbers only or (q/Q) to quit"
                 err_msg = ve.message
                 err_args = ve.args.__str__()
-                self.log_file.write(misc.now_string() + " :" + msg + "\n")
-                self.log_file.write(misc.now_string() + " :" + err_msg + "\n")
-                self.log_file.write(misc.now_string() + " :" + err_args + "\n")
+                self.log(msg)
+                self.log(err_msg)
+                self.log(err_args)
                 pass
             except SystemExit as e:
                 self.handle_error(e.code)
@@ -304,8 +321,8 @@ class CalUI:
                 err_msg = ex.message
                 err_args = ex.args.__str__()
                 print ex.message, ex.code
-                self.log_file.write(misc.now_string() + " :" + err_msg + "\n")
-                self.log_file.write(misc.now_string() + " :" + err_args + "\n")
+                self.log(err_msg)
+                self.log(err_args)
 
     def close_log_file(self):
         self.log_file.close()
