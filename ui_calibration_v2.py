@@ -201,6 +201,19 @@ class CalUI:
         temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
         cookgrid_info['key'] = temp_key
 
+    def partial_calibration(self):
+        sub_menu =  '******************************************\n'
+        sub_menu += '* Calibrate starting from...:            *\n'
+        sub_menu += '* 1. Autocal                             *\n'
+        sub_menu += '* 2. Autogrid                            *\n'
+        sub_menu += '* 3. Cookgrid Gain                       *\n'
+        sub_menu += '* 4. Cookgrid Temp                       *\n'
+        sub_menu += '* 5. Make Metamap                        *\n'
+        sub_menu += '*                                        *\n'
+        sub_menu += '* 6. Back                                *\n'
+        sub_menu += '******************************************'
+        prompt = '*>>> '
+
 
     def main_menu(self):
         menu = '******************************************\n'
@@ -211,7 +224,8 @@ class CalUI:
         menu += '* 4. Cookgrid Gain                       *\n'
         menu += '* 5. Cookgrid Temp                       *\n'
         menu += '* 6. Make Metamap                        *\n'
-        menu += '* 7. Exit                                *\n'
+        menu += '* 7. Calibrate starting from...          *\n'
+        menu += '* 8. Exit                                *\n'
         menu += '*                                        *\n'
         menu += '* 0. Custom Command                      *\n'
         menu += '******************************************'
@@ -229,7 +243,7 @@ class CalUI:
                     print '\nGoodbye!'
                     return False
                 ok = int(ok)
-                if ok >= 0 and ok <= 7:
+                if ok >= 0 and ok <= 8:
                     self.log("Main Menu. User chose: {0}".format(ok))
 
                     if ok == 0:
@@ -290,12 +304,13 @@ class CalUI:
                             print "Error! key is blank."
                     if ok == 6:
                         metamap.makeMetaMap()
-
                     if ok == 7:
+                        dump = 10
+                    if ok == 8:
                         print '\nGoodbye!'
                         return False
                 else:
-                    print "Error: Please pick 0-7 only"
+                    print "Error: Please pick 0-8 only"
             except RuntimeError as rte:
                 msg = "Caught RuntimeError in ui_calibration_v2.py"
                 err_msg = rte.message
