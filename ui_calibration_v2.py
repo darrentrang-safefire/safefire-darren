@@ -201,19 +201,96 @@ class CalUI:
         temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
         cookgrid_info['key'] = temp_key
 
+    def use_defaults(self):
+        while True:
+            flag = raw_input("Use default keys 'gain' and 'spot'? (y/n): ")
+            if flag.upper() == 'Y':
+                return ('gain', 'spot');
+            elif flag.upper() == 'N':
+                gains_key = raw_input("Enter key to use instead of 'gain': ")
+                spot_key = raw_input("Enter key to use instead of 'spot': ")
+                return (gains_key, spot_key)
+
+
     def partial_calibration(self):
         sub_menu =  '******************************************\n'
         sub_menu += '* Calibrate starting from...:            *\n'
         sub_menu += '* 1. Autocal                             *\n'
-        sub_menu += '* 2. Autogrid                            *\n'
+        sub_menu += '* 2. Autogrid Gain                       *\n'
         sub_menu += '* 3. Cookgrid Gain                       *\n'
-        sub_menu += '* 4. Cookgrid Temp                       *\n'
+        sub_menu += '* 4. Autogrid Spot                       *\n'
         sub_menu += '* 5. Make Metamap                        *\n'
+        sub_menu += '* 6. Cookgrid Spot                       *\n'
         sub_menu += '*                                        *\n'
-        sub_menu += '* 6. Back                                *\n'
+        sub_menu += '* 7. Back                                *\n'
         sub_menu += '******************************************'
         prompt = '*>>> '
+        while True:
+            try:
+                print sub_menu
+                ok = raw_input(prompt)
+                self.log("Sub Menu. User chose: {0}".format(ok))
+                if ok == 'q' or ok == 'Q' or ok == '7':
+                    self.log("Back to Main Menu!")
+                    print '\nBack to Main Menu!'
+                    return False
+                ok = int(ok)
+                if ok >= 1 and ok <=7:
+                    #ask to use default keys 'gains' and 'spots'
+                    gain_key, spot_key = self.use_defaults()
+                    self.log("Sub Menu. gain key: {0}           spot key: {1}".format(gain_key, spot_key))
 
+                    if ok == 1:
+                        #ask for path to example.cal
+                        #run autocal
+                        pass
+                    if ok <= 2:
+                        #run autogrid gain
+                        pass
+                    if ok <= 3:
+                        #run cookgrid gain
+                        pass
+                    if ok <= 4:
+                        #run autogrid spot
+                        pass
+                    if ok <= 5:
+                        #run metamap make
+                        pass
+                    if ok <= 6:
+                        #run cookgrid spots
+                        pass
+                    return True
+                else:
+                    print "Error: Please pick 0-7 only"
+
+            except RuntimeError as rte:
+                msg = "Caught RuntimeError in ui_calibration_v2.py sub menu"
+                err_msg = rte.message
+                err_args = rte.args.__str__()
+                print msg
+                print rte.message
+                self.log(msg)
+                self.log(err_msg)
+                self.log(err_args)
+                pass
+            except ValueError as ve:
+                msg = "Error: Enter numbers only"
+                err_msg = ve.message
+                err_args = ve.args.__str__()
+                self.log(msg)
+                self.log(err_msg)
+                self.log(err_args)
+                pass
+            except SystemExit as e:
+                self.handle_error(e.code)
+                pass
+            except Exception as ex:
+                err_msg = ex.message
+                err_args = ex.args.__str__()
+                print ex.message
+                self.log(err_msg)
+                self.log(err_args)
+                pass
 
     def main_menu(self):
         menu = '******************************************\n'
@@ -238,7 +315,7 @@ class CalUI:
 
                 print menu
                 ok = raw_input(prompt)
-                if ok == 'q' or ok == 'Q':
+                if ok == 'q' or ok == 'Q' or ok == '8':
                     self.log("Goodbye!")
                     print '\nGoodbye!'
                     return False
@@ -305,10 +382,8 @@ class CalUI:
                     if ok == 6:
                         metamap.makeMetaMap()
                     if ok == 7:
+                        self.partial_calibration()
                         dump = 10
-                    if ok == 8:
-                        print '\nGoodbye!'
-                        return False
                 else:
                     print "Error: Please pick 0-8 only"
             except RuntimeError as rte:
