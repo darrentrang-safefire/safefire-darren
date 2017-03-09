@@ -166,8 +166,15 @@ class CalUI:
     def get_autogrid_info(self, autogrid_info):
         overwrite = None
         resume = None
+        use_default = False
+        key = autogrid_info["key"]
 
-        key = raw_input("Enter key value (from meta.data ie. 'gain' or 'spot'): ").strip()
+        if "default" in autogrid_info.keys():
+            use_default = autogrid_info["default"]
+
+        if use_default == False:
+            key = raw_input("Enter key value (from meta.data ie. 'gain' or 'spot'): ").strip()
+
         completed = self.isKeyCompleted(key)
         if completed == "completed":
             overwrite = raw_input("'{0}s' was already completed. Overwrite? (y/n): ".format(key)).strip()
@@ -194,22 +201,38 @@ class CalUI:
         autogrid_info['overwrite'] = overwrite
 
     def get_cookgrid_gain_info(self, cookgrid_info):
-        temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
+        use_default = False
+        temp_key = cookgrid_info["key"]
+
+        if "default" in cookgrid_info.keys():
+            use_default = cookgrid_info["default"]
+
+        if use_default == False:
+            temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
+
         cookgrid_info['key'] = temp_key
 
     def get_cookgrid_temp_info(self, cookgrid_info):
-        temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
+        use_default = False
+        temp_key = cookgrid_info["key"]
+
+        if "default" in cookgrid_info.keys():
+            use_default = cookgrid_info["default"]
+
+        if use_default == False:
+            temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
+
         cookgrid_info['key'] = temp_key
 
     def use_defaults(self):
         while True:
             flag = raw_input("Use default keys 'gain' and 'spot'? (y/n): ")
             if flag.upper() == 'Y':
-                return ('gain', 'spot');
+                return ('gain', 'spot', True);
             elif flag.upper() == 'N':
                 gains_key = raw_input("Enter key to use instead of 'gain': ")
                 spot_key = raw_input("Enter key to use instead of 'spot': ")
-                return (gains_key, spot_key)
+                return (gains_key, spot_key, False)
 
 
     def partial_calibration(self):
@@ -237,28 +260,44 @@ class CalUI:
                 ok = int(ok)
                 if ok >= 1 and ok <=7:
                     #ask to use default keys 'gains' and 'spots'
-                    gain_key, spot_key = self.use_defaults()
+                    gain_key, spot_key, using_defaults = self.use_defaults()
                     self.log("Sub Menu. gain key: {0}           spot key: {1}".format(gain_key, spot_key))
 
                     if ok == 1:
-                        #ask for path to example.cal
-                        #run autocal
-                        pass
+                        #Autocal
+                        autocal_info = {"cal": "..\example.cal", "camSN": ""}
+                        self.get_autocal_info_all(autocal_info)
+                        #autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"])
+
                     if ok <= 2:
-                        #run autogrid gain
-                        pass
+                        #autogrid gain
+                        autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain", "default": using_defaults}
+                        self.get_autogrid_info(autogrid_gain_info)
+                        #autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"])
+
                     if ok <= 3:
-                        #run cookgrid gain
-                        pass
+                        #cookgrid gain
+                        cookgrid_info = {"key": "gains", "default": using_defaults}
+                        self.get_cookgrid_gain_info(cookgrid_info)
+                        #cookgrid.cookgrid_gain(cookgrid_info['key'])
+
                     if ok <= 4:
-                        #run autogrid spot
-                        pass
+                        #autogrid spot
+                        autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot", "default": using_defaults}
+                        self.get_autogrid_info(autogrid_spot_info)
+                        #autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"])
+
                     if ok <= 5:
-                        #run metamap make
+                        #metamap make
+                        #metamap.makeMetaMap()
                         pass
+
                     if ok <= 6:
-                        #run cookgrid spots
-                        pass
+                        #cookgrid spots
+                        cookgrid_info = {"key": "spots", "default": using_defaults}
+                        self.get_cookgrid_temp_info(cookgrid_info)
+                        #cookgrid.cookgrid_temp(cookgrid_info['key'])
+
                     return True
                 else:
                     print "Error: Please pick 0-7 only"
