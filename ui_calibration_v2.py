@@ -21,6 +21,17 @@ from metadata import MetaData
 #error code 9: user chose to cancel current operation
 #error code 101: warning no meta.data file found during initial startup
 
+#running full calibration from main menu requirements:
+#   example.cal must be located 1 directory back (../example.cal)
+#   use default keys "gain" and "spot", do not prompt to ask
+#   only thing asked for is the cam SN
+
+#running start calibration from... from main menu requirements:
+#   example.cal must be located 1 directory back (../example.cal)
+#   use default keys "gain" and "spot", do not prompt to ask
+#   only thing asked for is cam SN (IF USER ENTERED 1 IN SUB MENU)
+
+# meta.data checks only occur when doing single commands from main menu
 
 pr = cProfile.Profile()
 pr.enable()
@@ -229,10 +240,8 @@ class CalUI:
             flag = raw_input("Use default keys 'gain' and 'spot'? (y/n): ")
             if flag.upper() == 'Y':
                 return ('gain', 'spot', True);
-            elif flag.upper() == 'N':
-                gains_key = raw_input("Enter key to use instead of 'gain': ")
-                spot_key = raw_input("Enter key to use instead of 'spot': ")
-                return (gains_key, spot_key, False)
+
+            return ('','',False)
 
 
     def partial_calibration(self):
@@ -260,43 +269,38 @@ class CalUI:
                 ok = int(ok)
                 if ok >= 1 and ok <=7:
                     #ask to use default keys 'gains' and 'spots'
-                    gain_key, spot_key, using_defaults = self.use_defaults()
-                    self.log("Sub Menu. gain key: {0}           spot key: {1}".format(gain_key, spot_key))
+                    #gain_key, spot_key, using_defaults = self.use_defaults()
+                    #self.log("Sub Menu. gain key: {0}           spot key: {1}".format(gain_key, spot_key))
 
                     if ok == 1:
                         #Autocal
                         autocal_info = {"cal": "..\example.cal", "camSN": ""}
-                        self.get_autocal_info_all(autocal_info)
-                        #autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"])
+                        self.get_autocal_info(autocal_info)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None)
 
                     if ok <= 2:
                         #autogrid gain
-                        autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain", "default": using_defaults}
-                        self.get_autogrid_info(autogrid_gain_info)
-                        #autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"])
+                        autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain"}
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"])
 
                     if ok <= 3:
                         #cookgrid gain
-                        cookgrid_info = {"key": "gains", "default": using_defaults}
-                        self.get_cookgrid_gain_info(cookgrid_info)
-                        #cookgrid.cookgrid_gain(cookgrid_info['key'])
+                        cookgrid_info = {"key": "gains"}
+                        cookgrid.cookgrid_gain(cookgrid_info['key'])
 
                     if ok <= 4:
                         #autogrid spot
-                        autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot", "default": using_defaults}
-                        self.get_autogrid_info(autogrid_spot_info)
-                        #autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"])
+                        autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot"}
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"])
 
                     if ok <= 5:
                         #metamap make
-                        #metamap.makeMetaMap()
-                        pass
+                        metamap.makeMetaMap()
 
                     if ok <= 6:
                         #cookgrid spots
-                        cookgrid_info = {"key": "spots", "default": using_defaults}
-                        self.get_cookgrid_temp_info(cookgrid_info)
-                        #cookgrid.cookgrid_temp(cookgrid_info['key'])
+                        cookgrid_info = {"key": "spots"}
+                        cookgrid.cookgrid_temp(cookgrid_info['key'])
 
                     return True
                 else:
