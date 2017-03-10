@@ -25,13 +25,17 @@ from metadata import MetaData
 #   example.cal must be located 1 directory back (../example.cal)
 #   use default keys "gain" and "spot", do not prompt to ask
 #   only thing asked for is the cam SN
+#   THIS IS LIKE THIS SO THAT THE USER CAN KICK IT OFF AND COME BACK WHEN ITS DONE
 
 #running start calibration from... from main menu requirements:
 #   example.cal must be located 1 directory back (../example.cal)
 #   use default keys "gain" and "spot", do not prompt to ask
 #   only thing asked for is cam SN (IF USER ENTERED 1 IN SUB MENU)
+#   THIS IS LIKE THIS SO THAT THE USER CAN KICK IT OFF AND COME BACK WHEN ITS DONE
 
 # meta.data checks only occur when doing single commands from main menu
+
+# need to modify pre_calibration() so that it runs the commands
 
 pr = cProfile.Profile()
 pr.enable()
