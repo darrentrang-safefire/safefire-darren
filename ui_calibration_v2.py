@@ -47,6 +47,7 @@ class CalUI:
         self.log("Starting UI")
         self.load_md()
 
+
     def load_md(self):
         time = misc.now_string()
         self.log("Attempting to load meta data")
@@ -400,6 +401,8 @@ class CalUI:
                         cookgrid_info = {"key":"spots"}
                         cookgrid.cookgrid_temp(cookgrid_info['key'])
                     if ok == 2:
+
+
                         #self.pre_calibration(ok)
                         autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
                         self.get_autocal_info_all(autocal_info)
