@@ -489,6 +489,7 @@ def main(args):
         # cookgrid.cooktemps("spots")
 
         # checkspots
+        #testing
 
     finally:
         pr.disable()
