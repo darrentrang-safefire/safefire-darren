@@ -38,25 +38,43 @@ from metadata import MetaData
 
 # need to modify pre_calibration() so that it runs the commands
 
+#file structure must be
+# /camera SN
+#       /cal40C     ---> meta.data and cal files stored in here
+#       example.cal ---> this file must be here for autocal
+
+#ask for path to /camSN user wants to work out of. look for meta.data in /camSN/cal40C/. doesnt matter if path
+#ends with a "/" or not. path is not case sensitive
+
+FOLDER_STRUCTURE = "/cal40C/"
+EXAMPLE_CAL = "example.cal"
+
 pr = cProfile.Profile()
 pr.enable()
 
 class CalUI:
     def __init__(self):
-        self.log_file =  open('ui_calibration.log', 'a')
+        wd = raw_input("Enter the path to cameraSN (ie. C:/safefire/X800000): ")
+        self.cal_path = wd
+        if len(wd) > 0:
+            wd += FOLDER_STRUCTURE
+        else:
+            wd = os.getcwd()
+        self.log_file = open(os.path.join(wd,'ui_calibration.log'), 'a')
         time = misc.now_string()
-        self.log("Starting UI")
-        self.load_md()
+        self.log("\n\n\nStarting UI")
+        self.md_path = wd
+        self.load_md(wd)
 
-
-    def load_md(self):
+    def load_md(self, path):
         time = misc.now_string()
         self.log("Attempting to load meta data")
         md = MetaData()
-        if not md.load():
-            self.handle_error("WARNING: No meta.data file found")
+        if not md.load_from_dir(path):
+            self.handle_error("WARNING: No meta.data file found in {0}".format(path))
         else:
-            self.log("meta.data successfully loaded")
+            print "meta.data successfully loaded from {0}".format(path)
+            self.log("meta.data successfully loaded from {0}".format(path))
 
         self.md = md
 
@@ -280,7 +298,7 @@ class CalUI:
 
                     if ok == 1:
                         #Autocal
-                        autocal_info = {"cal": "..\example.cal", "camSN": ""}
+                        autocal_info = {"cal": ".\example.cal", "camSN": ""}
                         self.get_autocal_info(autocal_info)
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None)
 
@@ -358,10 +376,6 @@ class CalUI:
         prompt = '*>>> '
         while True:
             try:
-                if not hasattr(self.md, "serial"):
-                    # try to load meta data
-                    self.load_md()
-
                 print menu
                 ok = raw_input(prompt)
                 if ok == 'q' or ok == 'Q' or ok == '8':
@@ -379,59 +393,59 @@ class CalUI:
                         self.pre_calibration(ok)
 
                         #autocal -find -ctl ..\example.cal <CamSN>
-                        autocal_info = {"cal":"..\example.cal", "camSN": ""}
+                        autocal_info = {"cal":"../example.cal", "camSN": ""}
                         self.get_autocal_info(autocal_info)
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None)
+                        if self.md_path != os.getcwd():
+                            autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path)
 
                         #autogrid gain
                         autogrid_gain_info = {"resume":None, "overwrite":None, "key":"gain"}
-                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"])
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path)
 
                         #cookgrid -gain gains
                         cookgrid_info = {"key":"gains"}
-                        cookgrid.cookgrid_gain(cookgrid_info['key'])
+                        cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
 
                         #autogrid spot
                         autogrid_spot_info = {"resume":None, "overwrite":None, "key":"spot"}
-                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"])
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path)
 
                         #metamap make
-                        metamap.makeMetaMap()
+                        metamap.makeMetaMap(cwd=self.md_path)
 
                         #cookgrid -temp spots
                         cookgrid_info = {"key":"spots"}
-                        cookgrid.cookgrid_temp(cookgrid_info['key'])
+                        cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
                     if ok == 2:
-
-
                         #self.pre_calibration(ok)
                         autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
                         self.get_autocal_info_all(autocal_info)
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"])
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"], cwd=self.md_path)
                     if ok == 3:
                         self.pre_calibration(ok)
                         autogrid_info = {"resume": None, "overwrite": None, "key": ""}
                         self.get_autogrid_info(autogrid_info)
                         if len(autogrid_info["key"]) > 0:
-                            autogrid.autogrid(autogrid_info['resume'], autogrid_info['overwrite'], autogrid_info["key"])
+                            autogrid.autogrid(autogrid_info['resume'], autogrid_info['overwrite'], autogrid_info["key"], cwd=self.md_path)
                         else:
                             print "Error! key is blank."
                     if ok == 4:
                         cookgrid_info = {"key": ""}
                         self.get_cookgrid_gain_info(cookgrid_info)
                         if len(cookgrid_info["key"]) > 0:
-                            cookgrid.cookgrid_gain(cookgrid_info['key'])
+                            cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
                         else:
                             print "Error! key is blank."
                     if ok == 5:
                         cookgrid_info = {"key": ""}
                         self.get_cookgrid_temp_info(cookgrid_info)
                         if len(cookgrid_info["key"]) > 0:
-                            cookgrid.cookgrid_temp(cookgrid_info['key'])
+                            cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
                         else:
                             print "Error! key is blank."
                     if ok == 6:
-                        metamap.makeMetaMap()
+                        metamap.makeMetaMap(cwd=self.md_path)
                     if ok == 7:
                         self.partial_calibration()
                         dump = 10
@@ -451,6 +465,7 @@ class CalUI:
                 msg = "Error: Enter numbers only or (q/Q) to quit"
                 err_msg = ve.message
                 err_args = ve.args.__str__()
+                print ve.message
                 self.log(msg)
                 self.log(err_msg)
                 self.log(err_args)
