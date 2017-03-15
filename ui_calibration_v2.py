@@ -519,7 +519,7 @@ def main(args):
         ps2.sort_stats('calls')
         ps2.print_stats()
 
-        file = open('statistics_info.log', 'w')
+        file = open(os.path.join(calui.md_path,'statistics_info.log'), 'w')
         file.write(s.getvalue())
         file.write('\n\n\n')
         file.write(s2.getvalue())
