@@ -525,6 +525,7 @@ def main(args):
         file.write(s2.getvalue())
 
         calui.close_log_file()
+        #testing 123
 
 
 if __name__ == '__main__':
