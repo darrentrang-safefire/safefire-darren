@@ -56,8 +56,10 @@ class CalUI:
     def __init__(self):
         self.cal_path = self.get_working_directory()
 
-        self.log_file = open(os.path.join(self.cal_path,'ui_calibration.log'), 'a')
-        self.log("\n\n\nStarting UI")
+        self.log_file = open(os.path.join(self.cal_path, 'ui_calibration.log'), 'a')
+        self.log("\n\nStarting UI")
+        self.log("working directory set to {0}".format(self.cal_path))
+
         self.md_path = self.cal_path + FOLDER_STRUCTURE
         self.load_md(self.md_path)
 
@@ -148,33 +150,44 @@ class CalUI:
 
 
     def run_command(self, command):
+        self.log("attempting to run custom command: {0}".format(command))
         command += "\n" #need this because prompt asks for "more?"
         # print r'running command: ', (command.encode('string-escape'))
         process = subprocess.Popen('cmd.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate(command)
         if command != '\n':
             process.stdout.flush()
+            self.log("custom command success")
             print stdout
 
     def pre_calibration(self, input):
         print "doing precalibration stuff"
+        self.log("doing precalibration stuff")
         # if input >= 1 and input <= 6:
+        #     self.log("pre calibration - starting motor")
+        #     print "starting motor"
         #     self.run_command("start motor")
+        #     self.log("pre calibration - start showprogress")
         #     self.run_command("start showprogress")
+        #     self.log("Sleep 10 seconds")
+        #     print "Waiting for 10 seconds...Ctrl+C to stop program"
         #     time.sleep(10);
 
     def get_autocal_info(self, autocal_info):
         camSN = raw_input("Enter Camera Serial Number: ")
         camSN = camSN.upper()
         autocal_info["camSN"] = camSN
+        self.log("Autocal - camSN = {0}".format(camSN))
 
     def get_autocal_info_all(self, autocal_info):
         camSN = raw_input("Enter Camera Serial Number: ")
         camSN = camSN.upper()
         autocal_info["camSN"] = camSN
+        self.lg("Autocal - camSN = {0}".format(camSN))
 
         cal = raw_input("Enter path to .cal file: ")
         autocal_info["cal"] = cal
+        self.log("Autocal - .cal path = {0}".format(cal))
 
         while True:
             try:
@@ -190,9 +203,11 @@ class CalUI:
                     rect.append(int(rect_r))
                     rect.append(int(rect_b))
                     autocal_info["rect"] = misc.rect4(rect)
+                    self.log("Autocal - setting rect. l = {0}, t = {1}, r = {2}, b = {3}".format(rect_l, rect_t, rect_r, rect_b))
                     break
                 else:
                     autocal_info["rect"] = None
+                    self.log("Autocal - no rect specified")
                     break
             except ValueError as ve:
                 print "Error: Enter numbers only"
@@ -213,6 +228,7 @@ class CalUI:
             autocal_info["overwrite"] = True
         elif resume.upper() == "C":
             sys.exit(9)
+        self.log("Autocal resume/overwrite - resume = {0}, overwrite = {1}".format(autocal_info["resume"], autocal_info["overwrite"]))
 
 
     def get_autogrid_info(self, autogrid_info):
@@ -226,6 +242,7 @@ class CalUI:
 
         if use_default == False:
             key = raw_input("Enter key value (from meta.data ie. 'gain' or 'spot'): ").strip()
+            self.log("Autogrid - key set to {0}".format(key))
 
         completed = self.isKeyCompleted(key)
         if completed == "completed":
@@ -234,18 +251,23 @@ class CalUI:
                 overwrite = True
             else:
                 overwrite = False
+            self.log("Autogrid key {0} completed. overwrite = {1}".format(key, overwrite))
         elif completed == "continue or overwrite":
             choice = raw_input("'{0}s_completed' found partially completed. Resume/Overwrite or Cancel? (r/o/c): ".format(key)).lower().strip()
             if choice == "r":
                 resume = True
+                overwrite = False
             elif choice == "o":
                 overwrite = True
+                resume = False
             elif choice == "c":
                 sys.exit(9)
+            self.log("Autogrid key {0} partially completed. overwrite = {1}, resume = {2}".format(key, overwrite, resume))
         elif completed == "no completed key":
             #first time running autogrid on this key
             overwrite = None
             resume = None
+            self.log("Autogrid key {0} first time being processed.".format(key, overwrite))
 
 
         autogrid_info['key'] = key
@@ -263,6 +285,7 @@ class CalUI:
             temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
 
         cookgrid_info['key'] = temp_key
+        self.log("Cookgrid Gain - key = {0}".format(temp_key))
 
     def get_cookgrid_temp_info(self, cookgrid_info):
         use_default = False
@@ -275,6 +298,7 @@ class CalUI:
             temp_key = raw_input("Enter key value (from meta.data ie. 'gains' or 'spots'): ").strip()
 
         cookgrid_info['key'] = temp_key
+        self.log("Cookgrid Temp - key = {0}".format(temp_key))
 
     def use_defaults(self):
         while True:
@@ -376,6 +400,28 @@ class CalUI:
                 self.log(err_args)
                 pass
 
+    def get_choice_string(self, choice):
+        if choice == 1:
+            return "1. Full Calibration"
+        elif choice == 2:
+            return "2. Autocal"
+        elif choice == 3:
+            return "3. Autogrid"
+        elif choice == 4:
+            return "4. Cookgrid Gain"
+        elif choice == 5:
+            return "5. Cookgrid Temp"
+        elif choice == 6:
+            return "6. Make Metamap"
+        elif choice == 7:
+            return "7. Calibrate starting from..."
+        elif choice == 8:
+            return "8. Exit"
+        elif choice == 0:
+            return "0. Custom Command"
+        else:
+            return "Unable to find choice"
+
     def main_menu(self):
         menu = '******************************************\n'
         menu += '* Choose command to run:                 *\n'
@@ -401,14 +447,17 @@ class CalUI:
                     return False
                 ok = int(ok)
                 if ok >= 0 and ok <= 8:
-                    self.log("Main Menu. User chose: {0}".format(ok))
+                    choice = self.get_choice_string(ok)
+                    self.log("Main Menu. User chose: {0}".format(choice))
 
                     if ok == 0:
                         custom_command = raw_input("Enter custom command: ")
                         self.run_command(custom_command);
                     if ok == 1:
+                        self.log("Full calbration - pre calibration commands")
                         self.pre_calibration(ok)
 
+                        self.log("Full calbration - Autocal")
                         #autocal -find -ctl ..\example.cal <CamSN>
                         autocal_info = {"cal":"../example.cal", "camSN": ""}
                         self.get_autocal_info(autocal_info)
@@ -416,21 +465,26 @@ class CalUI:
                             autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path)
 
+                        self.log("Full calbration - Autogrid gain")
                         #autogrid gain
                         autogrid_gain_info = {"resume":None, "overwrite":None, "key":"gain"}
                         autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path)
 
+                        self.log("Full calbration - Cookgrid gains")
                         #cookgrid -gain gains
                         cookgrid_info = {"key":"gains"}
                         cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
 
+                        self.log("Full calbration - Autogrid spot")
                         #autogrid spot
                         autogrid_spot_info = {"resume":None, "overwrite":None, "key":"spot"}
                         autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path)
 
+                        self.log("Full calbration - Metamap make")
                         #metamap make
                         metamap.makeMetaMap(cwd=self.md_path)
 
+                        self.log("Full calbration - Cookgrid spots")
                         #cookgrid -temp spots
                         cookgrid_info = {"key":"spots"}
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
@@ -499,6 +553,7 @@ class CalUI:
                 pass
 
     def close_log_file(self):
+        self.log("closing log file")
         self.log_file.close()
 
 def main(args):
@@ -523,6 +578,8 @@ def main(args):
         #testing
 
     finally:
+        calui.close_log_file()
+
         pr.disable()
         s = StringIO.StringIO()
         ps = pstats.Stats(pr, stream=s).strip_dirs()
@@ -540,7 +597,6 @@ def main(args):
         file.write('\n\n\n')
         file.write(s2.getvalue())
 
-        calui.close_log_file()
         #testing 123
         #backup
         #asdf
