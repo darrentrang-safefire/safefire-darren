@@ -46,7 +46,7 @@ from metadata import MetaData
 #ask for path to /camSN user wants to work out of. look for meta.data in /camSN/cal40C/. doesnt matter if path
 #ends with a "/" or not. path is not case sensitive
 
-FOLDER_STRUCTURE = "/cal40C/"
+FOLDER_STRUCTURE = "/cal40C"
 EXAMPLE_CAL = "example.cal"
 
 pr = cProfile.Profile()
@@ -54,27 +54,43 @@ pr.enable()
 
 class CalUI:
     def __init__(self):
-        wd = raw_input("Enter the path to cameraSN (ie. C:/safefire/X800000): ")
-        self.cal_path = wd
-        if len(wd) > 0:
-            wd += FOLDER_STRUCTURE
-        else:
-            wd = os.getcwd()
-        self.log_file = open(os.path.join(wd,'ui_calibration.log'), 'a')
-        time = misc.now_string()
+        self.cal_path = self.get_working_directory()
+
+        self.log_file = open(os.path.join(self.cal_path,'ui_calibration.log'), 'a')
         self.log("\n\n\nStarting UI")
-        self.md_path = wd
-        self.load_md(wd)
+        self.md_path = self.cal_path + FOLDER_STRUCTURE
+        self.load_md(self.md_path)
+
+    def get_working_directory(self):
+        wd = ""
+        while (True):
+            wd = raw_input("Enter the path to cameraSN (ie. C:/safefire/X800000): ")
+            if not os.path.exists(wd):
+                print "Could not find path {0}. Please try again.".format(wd)
+            else:
+                wd_cal40c = wd + FOLDER_STRUCTURE
+                if not os.path.exists(wd_cal40c):
+                    prompt = "Folder cal40C not found in {0}. Would you like to make one? (y/n): ".format(wd)
+                    yorn = raw_input(prompt)
+                    if yorn.lower() == 'y':
+                        os.mkdir(wd_cal40c)
+                        break
+                    else:
+                        print "Could not find directory cal40C in {0}. Please try again.".format(wd)
+                else:
+                    break
+        return wd
 
     def load_md(self, path):
-        time = misc.now_string()
         self.log("Attempting to load meta data")
         md = MetaData()
-        if not md.load_from_dir(path):
-            self.handle_error("WARNING: No meta.data file found in {0}".format(path))
-        else:
+
+        if os.path.isfile(os.path.join(path, "meta.data")):
+            md.load_from_dir(path)
             print "meta.data successfully loaded from {0}".format(path)
             self.log("meta.data successfully loaded from {0}".format(path))
+        else:
+            self.handle_error("WARNING: No meta.data file found in {0}".format(path))
 
         self.md = md
 
@@ -83,6 +99,7 @@ class CalUI:
         self.log_file.write(time + " : " + msg + "\n")
 
     def run(self):
+        time.sleep(.3)
         self.main_menu()
 
     def handle_error(self, code):
@@ -418,7 +435,7 @@ class CalUI:
                         cookgrid_info = {"key":"spots"}
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
                     if ok == 2:
-                        #self.pre_calibration(ok)
+                        self.pre_calibration(ok)
                         autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
                         self.get_autocal_info_all(autocal_info)
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"], cwd=self.md_path)
@@ -493,7 +510,6 @@ def main(args):
         calui.run()
 
         #main_menu(log_file)
-
         # autogrid.autogrid(resume=None, overwrite=None, key="gain")
         # cookgrid.cookgain("gains")
 
