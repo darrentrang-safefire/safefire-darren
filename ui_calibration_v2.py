@@ -19,6 +19,7 @@ import metamap
 import misc
 from metadata import MetaData
 
+#testing git diff
 #error code 9: user chose to cancel current operation
 #error code 101: warning no meta.data file found during initial startup
 
