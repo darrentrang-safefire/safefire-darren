@@ -326,46 +326,53 @@ class CalUI:
             try:
                 print sub_menu
                 ok = raw_input(prompt)
-                self.log("Sub Menu. User chose: {0}".format(ok))
                 if ok == 'q' or ok == 'Q' or ok == '7':
+                    self.log("User chose 7. Back in sub menu")
                     self.log("Back to Main Menu!")
                     print '\nBack to Main Menu!'
                     return False
                 ok = int(ok)
                 if ok >= 1 and ok <=7:
-                    #ask to use default keys 'gains' and 'spots'
-                    #gain_key, spot_key, using_defaults = self.use_defaults()
-                    #self.log("Sub Menu. gain key: {0}           spot key: {1}".format(gain_key, spot_key))
+                    choice_str = self.get_choice_submenu_string(ok)
+                    self.log("Sub menu, user chose: {0}".format(choice_str))
 
                     if ok == 1:
-                        #Autocal
-                        autocal_info = {"cal": ".\example.cal", "camSN": ""}
+                        # Autocal
+                        self.log("Partial calbration - Autocal")
+                        autocal_info = {"cal": "../example.cal", "camSN": ""}
                         self.get_autocal_info(autocal_info)
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None)
+                        if self.md_path != os.getcwd():
+                            autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path)
 
                     if ok <= 2:
-                        #autogrid gain
+                        self.log("Partial calbration - Autogrid gain")
+                        # Autogrid gain
                         autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain"}
-                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"])
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path)
 
                     if ok <= 3:
-                        #cookgrid gain
+                        self.log("Patial calbration - Cookgrid gains")
+                        # Cookgrid -gain gains
                         cookgrid_info = {"key": "gains"}
-                        cookgrid.cookgrid_gain(cookgrid_info['key'])
+                        cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
 
                     if ok <= 4:
-                        #autogrid spot
+                        self.log("Partial calbration - Autogrid spot")
+                        # Autogrid spot
                         autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot"}
-                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"])
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path)
 
                     if ok <= 5:
-                        #metamap make
-                        metamap.makeMetaMap()
+                        self.log("Partial calbration - Metamap make")
+                        # Metamap make
+                        metamap.makeMetaMap(cwd=self.md_path)
 
                     if ok <= 6:
-                        #cookgrid spots
+                        self.log("Partial calbration - Cookgrid spots")
+                        # Cookgrid -temp spots
                         cookgrid_info = {"key": "spots"}
-                        cookgrid.cookgrid_temp(cookgrid_info['key'])
+                        cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
 
                     return True
                 else:
@@ -419,6 +426,24 @@ class CalUI:
             return "8. Exit"
         elif choice == 0:
             return "0. Custom Command"
+        else:
+            return "Unable to find choice"
+
+    def get_choice_submenu_string(self, choice):
+        if choice == 1:
+            return "1. Autocal"
+        elif choice == 2:
+            return "2. Autogrid Gain"
+        elif choice == 3:
+            return "3. Cookgrid Gain"
+        elif choice == 4:
+            return "4. Autogrid Spot"
+        elif choice == 5:
+            return "5. Make Metamap"
+        elif choice == 6:
+            return "6. Cookgrid Spot"
+        elif choice == 7:
+            return "7. Back"
         else:
             return "Unable to find choice"
 
