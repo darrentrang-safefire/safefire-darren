@@ -19,7 +19,6 @@ import metamap
 import misc
 from metadata import MetaData
 
-#testing git diff
 #error code 9: user chose to cancel current operation
 #error code 101: warning no meta.data file found during initial startup
 
@@ -184,7 +183,7 @@ class CalUI:
         camSN = raw_input("Enter Camera Serial Number: ")
         camSN = camSN.upper()
         autocal_info["camSN"] = camSN
-        self.lg("Autocal - camSN = {0}".format(camSN))
+        self.log("Autocal - camSN = {0}".format(camSN))
 
         cal = raw_input("Enter path to .cal file: ")
         autocal_info["cal"] = cal
@@ -601,7 +600,6 @@ def main(args):
         # cookgrid.cooktemps("spots")
 
         # checkspots
-        #testing
 
     finally:
         calui.close_log_file()
@@ -622,10 +620,6 @@ def main(args):
         file.write(s.getvalue())
         file.write('\n\n\n')
         file.write(s2.getvalue())
-
-        #testing 123
-        #backup
-        #asdf
 
 
 if __name__ == '__main__':
