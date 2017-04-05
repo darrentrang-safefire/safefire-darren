@@ -46,6 +46,7 @@ from metadata import MetaData
 #ask for path to /camSN user wants to work out of. look for meta.data in /camSN/cal40C/. doesnt matter if path
 #ends with a "/" or not. path is not case sensitive
 
+
 FOLDER_STRUCTURE = "/cal40C"
 EXAMPLE_CAL = "example.cal"
 
@@ -335,21 +336,23 @@ class CalUI:
                 if ok >= 1 and ok <=7:
                     choice_str = self.get_choice_submenu_string(ok)
                     self.log("Sub menu, user chose: {0}".format(choice_str))
+                    full_cal = False
 
                     if ok == 1:
                         # Autocal
+                        full_cal=True
                         self.log("Partial calbration - Autocal")
                         autocal_info = {"cal": "../example.cal", "camSN": ""}
                         self.get_autocal_info(autocal_info)
                         if self.md_path != os.getcwd():
                             autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=full_cal)
 
                     if ok <= 2:
                         self.log("Partial calbration - Autogrid gain")
                         # Autogrid gain
                         autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain"}
-                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path)
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=full_cal)
 
                     if ok <= 3:
                         self.log("Patial calbration - Cookgrid gains")
@@ -361,7 +364,7 @@ class CalUI:
                         self.log("Partial calbration - Autogrid spot")
                         # Autogrid spot
                         autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot"}
-                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path)
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=full_cal)
 
                     if ok <= 5:
                         self.log("Partial calbration - Metamap make")
@@ -488,12 +491,12 @@ class CalUI:
                         self.get_autocal_info(autocal_info)
                         if self.md_path != os.getcwd():
                             autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=True)
 
                         self.log("Full calbration - Autogrid gain")
                         #autogrid gain
                         autogrid_gain_info = {"resume":None, "overwrite":None, "key":"gain"}
-                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path)
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=True)
 
                         self.log("Full calbration - Cookgrid gains")
                         #cookgrid -gain gains
@@ -503,7 +506,7 @@ class CalUI:
                         self.log("Full calbration - Autogrid spot")
                         #autogrid spot
                         autogrid_spot_info = {"resume":None, "overwrite":None, "key":"spot"}
-                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path)
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=True)
 
                         self.log("Full calbration - Metamap make")
                         #metamap make
