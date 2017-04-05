@@ -64,6 +64,16 @@ class CalUI:
         self.md_path = self.cal_path + FOLDER_STRUCTURE
         self.load_md(self.md_path)
 
+    def stop_profile(self, pr, logfile):
+        pr.disable()
+        s = StringIO.StringIO()
+        ps = pstats.Stats(pr, stream=s).strip_dirs()
+        ps.sort_stats('cumtime')
+        ps.print_stats()
+        #print s.getvalue()
+        file = open(os.path.join(self.md_path, logfile), 'w')
+        file.write(s.getvalue())
+
     def get_working_directory(self):
         wd = ""
         while (True):
@@ -491,31 +501,55 @@ class CalUI:
                         self.get_autocal_info(autocal_info)
                         if self.md_path != os.getcwd():
                             autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
+                        #start to gather stats
+                        pr_autocal = cProfile.Profile()
+                        pr_autocal.enable()
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=True)
+                        self.stop_profile(pr_autocal, "Autocal_stats.log")
 
                         self.log("Full calbration - Autogrid gain")
                         #autogrid gain
                         autogrid_gain_info = {"resume":None, "overwrite":None, "key":"gain"}
+                        # start to gather stats
+                        pr_autogrid_gain = cProfile.Profile()
+                        pr_autogrid_gain.enable()
                         autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=True)
+                        self.stop_profile(pr_autogrid_gain, "Autogrid_gain_stats.log")
 
                         self.log("Full calbration - Cookgrid gains")
                         #cookgrid -gain gains
                         cookgrid_info = {"key":"gains"}
+                        # start to gather stats
+                        pr_cookgrid_gain = cProfile.Profile()
+                        pr_cookgrid_gain.enable()
                         cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
+                        self.stop_profile(pr_cookgrid_gain, "Cookgrid_gain_stats.log")
 
                         self.log("Full calbration - Autogrid spot")
                         #autogrid spot
                         autogrid_spot_info = {"resume":None, "overwrite":None, "key":"spot"}
+                        # start to gather stats
+                        pr_autogrid_spot = cProfile.Profile()
+                        pr_autogrid_spot.enable()
                         autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=True)
+                        self.stop_profile(pr_autogrid_spot, "Autogrid_spot_stats.log")
 
                         self.log("Full calbration - Metamap make")
                         #metamap make
+                        # start to gather stats
+                        pr_metamap = cProfile.Profile()
+                        pr_metamap.enable()
                         metamap.makeMetaMap(cwd=self.md_path)
+                        self.stop_profile(pr_metamap, "Metamap_stats.log")
 
                         self.log("Full calbration - Cookgrid spots")
                         #cookgrid -temp spots
                         cookgrid_info = {"key":"spots"}
+                        # start to gather stats
+                        pr_cookgrid_spots = cProfile.Profile()
+                        pr_cookgrid_spots.enable()
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
+                        self.stop_profile(pr_cookgrid_spots, "Cookgrid_spots_stats.log")
                     if ok == 2:
                         self.pre_calibration(ok)
                         autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
@@ -619,7 +653,7 @@ def main(args):
         ps2.sort_stats('calls')
         ps2.print_stats()
 
-        file = open(os.path.join(calui.md_path,'statistics_info.log'), 'w')
+        file = open(os.path.join(calui.md_path,'Overall_statistics_info.log'), 'w')
         file.write(s.getvalue())
         file.write('\n\n\n')
         file.write(s2.getvalue())
