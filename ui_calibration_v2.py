@@ -626,15 +626,7 @@ def main(args):
         calui = CalUI()
         calui.run()
 
-        #main_menu(log_file)
-        # autogrid.autogrid(resume=None, overwrite=None, key="gain")
-        # cookgrid.cookgain("gains")
-
         # spackle & hotspot fix
-
-        # autogrid.autogrid(resume=None, overwrite=None, key="spot")
-        # metamap.makeMetaMap()
-        # cookgrid.cooktemps("spots")
 
         # checkspots
 
