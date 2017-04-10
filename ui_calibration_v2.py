@@ -550,6 +550,7 @@ class CalUI:
                         pr_cookgrid_spots.enable()
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
                         self.stop_profile(pr_cookgrid_spots, "Cookgrid_spots_stats.log")
+                        return False
                     if ok == 2:
                         self.pre_calibration(ok)
                         autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
@@ -581,7 +582,6 @@ class CalUI:
                         metamap.makeMetaMap(cwd=self.md_path)
                     if ok == 7:
                         self.partial_calibration()
-                        dump = 10
                 else:
                     print "Error: Please pick 0-8 only"
             except RuntimeError as rte:
