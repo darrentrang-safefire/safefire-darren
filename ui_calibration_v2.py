@@ -16,8 +16,11 @@ import autocal
 import autogrid
 import cookgrid
 import metamap
-import misc
+import autocalx
 from metadata import MetaData
+import misc
+from misc import PushDir
+import checkspots
 
 #error code 9: user chose to cancel current operation
 #error code 101: warning no meta.data file found during initial startup
@@ -329,21 +332,22 @@ class CalUI:
         sub_menu += '* 4. Autogrid Spot                       *\n'
         sub_menu += '* 5. Make Metamap                        *\n'
         sub_menu += '* 6. Cookgrid Spot                       *\n'
+        sub_menu += '* 7. Checkspots                          *\n'
         sub_menu += '*                                        *\n'
-        sub_menu += '* 7. Back                                *\n'
+        sub_menu += '* 8. Back                                *\n'
         sub_menu += '******************************************'
         prompt = '*>>> '
         while True:
             try:
                 print sub_menu
                 ok = raw_input(prompt)
-                if ok == 'q' or ok == 'Q' or ok == '7':
-                    self.log("User chose 7. Back in sub menu")
+                if ok == 'q' or ok == 'Q' or ok == '8':
+                    self.log("User chose 8. Back in sub menu")
                     self.log("Back to Main Menu!")
                     print '\nBack to Main Menu!'
                     return False
                 ok = int(ok)
-                if ok >= 1 and ok <=7:
+                if ok >= 1 and ok <=8:
                     choice_str = self.get_choice_submenu_string(ok)
                     self.log("Sub menu, user chose: {0}".format(choice_str))
                     full_cal = False
@@ -387,12 +391,21 @@ class CalUI:
                         cookgrid_info = {"key": "spots"}
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
 
+                    if ok <= 7:
+                        self.log("Partial calibration - Checkspots")
+                        # checkspots
+                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
+                        checkspots.main(cs_args, cwd=self.md_path)
+
                     return True
                 else:
-                    print "Error: Please pick 0-7 only"
+                    print "Error: Please pick 0-8 only"
 
             except RuntimeError as rte:
-                msg = "Caught RuntimeError in ui_calibration_v2.py sub menu"
                 err_msg = rte.message
                 err_args = rte.args.__str__()
                 print msg
@@ -434,9 +447,11 @@ class CalUI:
         elif choice == 6:
             return "6. Make Metamap"
         elif choice == 7:
-            return "7. Calibrate starting from..."
+            return "7. Checkspots"
         elif choice == 8:
-            return "8. Exit"
+            return "8. Calibrate starting from..."
+        elif choice == 9:
+            return "9. Exit"
         elif choice == 0:
             return "0. Custom Command"
         else:
@@ -469,8 +484,9 @@ class CalUI:
         menu += '* 4. Cookgrid Gain                       *\n'
         menu += '* 5. Cookgrid Temp                       *\n'
         menu += '* 6. Make Metamap                        *\n'
-        menu += '* 7. Calibrate starting from...          *\n'
-        menu += '* 8. Exit                                *\n'
+        menu += '* 7. Checkspots                          *\n'
+        menu += '* 8. Calibrate starting from...          *\n'
+        menu += '* 9. Exit                                *\n'
         menu += '*                                        *\n'
         menu += '* 0. Custom Command                      *\n'
         menu += '******************************************'
@@ -479,12 +495,12 @@ class CalUI:
             try:
                 print menu
                 ok = raw_input(prompt)
-                if ok == 'q' or ok == 'Q' or ok == '8':
+                if ok == 'q' or ok == 'Q' or ok == '9':
                     self.log("Goodbye!")
                     print '\nGoodbye!'
                     return False
                 ok = int(ok)
-                if ok >= 0 and ok <= 8:
+                if ok >= 0 and ok <= 9:
                     choice = self.get_choice_string(ok)
                     self.log("Main Menu. User chose: {0}".format(choice))
 
@@ -550,6 +566,20 @@ class CalUI:
                         pr_cookgrid_spots.enable()
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
                         self.stop_profile(pr_cookgrid_spots, "Cookgrid_spots_stats.log")
+
+                        #checkspots
+                        dump123 = 111 #REPLACE THE COOKED SPOTS IMAGES
+                        self.log("Full calibration - Checkspots")
+                        pr_checkspots = cProfile.Profile()
+                        pr_checkspots.enable()
+                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        self.stop_profile(pr_checkspots, "Spotcheck_stats.log")
+
                         return False
                     if ok == 2:
                         self.pre_calibration(ok)
@@ -581,9 +611,17 @@ class CalUI:
                     if ok == 6:
                         metamap.makeMetaMap(cwd=self.md_path)
                     if ok == 7:
+                        # checkspots
+                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
+                        checkspots.main(cs_args, cwd=self.md_path)
+                    if ok == 8:
                         self.partial_calibration()
                 else:
-                    print "Error: Please pick 0-8 only"
+                    print "Error: Please pick 0-9 only"
             except RuntimeError as rte:
                 msg = "Caught RuntimeError in ui_calibration_v2.py"
                 err_msg = rte.message
@@ -593,7 +631,7 @@ class CalUI:
                 self.log(msg)
                 self.log(err_msg)
                 self.log(err_args)
-                pass
+                #pass
             except ValueError as ve:
                 msg = "Error: Enter numbers only or (q/Q) to quit"
                 err_msg = ve.message
@@ -605,14 +643,17 @@ class CalUI:
                 pass
             except SystemExit as e:
                 self.handle_error(e.code)
-                pass
+                #pass
             except Exception as ex:
                 err_msg = ex.message
                 err_args = ex.args.__str__()
                 print ex.message
+                if hasattr(ex, "strerror"):
+                    print ex.strerror
+                    self.log(ex.strerror)
                 self.log(err_msg)
                 self.log(err_args)
-                pass
+                #pass
 
     def close_log_file(self):
         self.log("closing log file")
@@ -631,6 +672,12 @@ def main(args):
         # checkspots
 
     finally:
+        # check m390 temperature, if not at 581, set to 581 (hw_shutdown()?)
+        temp = autocalx.hw_gettemp()
+        if temp > 581:
+            print "M390 current temperature is > 581. Starting shutdown procedure."
+            autocalx.hw_shutdown()
+
         calui.close_log_file()
 
         pr.disable()
