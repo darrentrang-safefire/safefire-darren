@@ -67,14 +67,17 @@ class CalUI:
         self.md_path = self.cal_path + FOLDER_STRUCTURE
         self.load_md(self.md_path)
 
-    def stop_profile(self, pr, logfile):
+    def stop_profile(self, pr, logfile, append=False):
         pr.disable()
         s = StringIO.StringIO()
         ps = pstats.Stats(pr, stream=s).strip_dirs()
         ps.sort_stats('cumtime')
         ps.print_stats()
         #print s.getvalue()
-        file = open(os.path.join(self.md_path, logfile), 'w')
+        if append is True:
+            file = open(os.path.join(self.md_path, logfile), 'a')
+        else:
+            file = open(os.path.join(self.md_path, logfile), 'w')
         file.write(s.getvalue())
 
     def get_working_directory(self):
@@ -144,7 +147,7 @@ class CalUI:
         if hasattr(self.md, temp_key):
             key_list = getattr(self.md, temp_key)
         else:
-            sys.exit("key: {0}s not found in metadata".format(temp_key))
+            sys.exit("key: {0} not found in metadata".format(temp_key))
 
         if hasattr(self.md, temp_completed_key):
             key_completed = getattr(self.md, temp_completed_key)
@@ -352,6 +355,8 @@ class CalUI:
                     self.log("Sub menu, user chose: {0}".format(choice_str))
                     full_cal = False
 
+                    os.chdir(self.md_path)
+
                     if ok == 1:
                         # Autocal
                         full_cal=True
@@ -360,39 +365,60 @@ class CalUI:
                         self.get_autocal_info(autocal_info)
                         if self.md_path != os.getcwd():
                             autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
+                        pr_autocal = cProfile.Profile()
+                        pr_autocal.enable()
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=full_cal)
+                        self.stop_profile(pr_autocal, "Autocal_stats.log", append=True)
 
                     if ok <= 2:
                         self.log("Partial calbration - Autogrid gain")
                         # Autogrid gain
                         autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain"}
+                        #autogrid_gain_info = {"resume": True, "overwrite": None, "key": "gain"}
+                        pr_autogrid_gain = cProfile.Profile()
+                        pr_autogrid_gain.enable()
                         autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=full_cal)
+                        self.stop_profile(pr_autogrid_gain, "Autogrid_gain_stats.log", append=True)
 
                     if ok <= 3:
                         self.log("Patial calbration - Cookgrid gains")
                         # Cookgrid -gain gains
                         cookgrid_info = {"key": "gains"}
+                        pr_cookgrid_gain = cProfile.Profile()
+                        pr_cookgrid_gain.enable()
                         cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
+                        self.stop_profile(pr_cookgrid_gain, "Cookgrid_gain_stats.log", append=True)
 
                     if ok <= 4:
                         self.log("Partial calbration - Autogrid spot")
                         # Autogrid spot
                         autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot"}
+                        pr_autogrid_spot = cProfile.Profile()
+                        pr_autogrid_spot.enable()
                         autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=full_cal)
+                        self.stop_profile(pr_autogrid_spot, "Autogrid_spot_stats.log", append=True)
 
                     if ok <= 5:
                         self.log("Partial calbration - Metamap make")
                         # Metamap make
+                        pr_metamap = cProfile.Profile()
+                        pr_metamap.enable()
                         metamap.makeMetaMap(cwd=self.md_path)
+                        self.stop_profile(pr_metamap, "Metamap_stats.log", append=True)
 
                     if ok <= 6:
                         self.log("Partial calbration - Cookgrid spots")
                         # Cookgrid -temp spots
                         cookgrid_info = {"key": "spots"}
+                        pr_cookgrid_spots = cProfile.Profile()
+                        pr_cookgrid_spots.enable()
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
+                        self.stop_profile(pr_cookgrid_spots, "Cookgrid_spots_stats.log", append=True)
 
                     if ok <= 7:
                         self.log("Partial calibration - Checkspots")
+                        pr_checkspots = cProfile.Profile()
+                        pr_checkspots.enable()
                         # checkspots
                         cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
                         checkspots.main(cs_args, cwd=self.md_path)
@@ -400,6 +426,7 @@ class CalUI:
                         checkspots.main(cs_args, cwd=self.md_path)
                         cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
                         checkspots.main(cs_args, cwd=self.md_path)
+                        self.stop_profile(pr_checkspots, "Spotcheck_stats.log", append=True)
 
                     return True
                 else:
@@ -602,6 +629,7 @@ class CalUI:
                         else:
                             print "Error! key is blank."
                     if ok == 5:
+                        os.chdir(self.md_path)
                         cookgrid_info = {"key": ""}
                         self.get_cookgrid_temp_info(cookgrid_info)
                         if len(cookgrid_info["key"]) > 0:
