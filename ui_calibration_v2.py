@@ -179,16 +179,16 @@ class CalUI:
 
     def pre_calibration(self, input):
         print "doing precalibration stuff"
-        self.log("doing precalibration stuff")
-        # if input >= 1 and input <= 6:
-        #     self.log("pre calibration - starting motor")
-        #     print "starting motor"
-        #     self.run_command("start motor")
-        #     self.log("pre calibration - start showprogress")
-        #     self.run_command("start showprogress")
-        #     self.log("Sleep 10 seconds")
-        #     print "Waiting for 10 seconds...Ctrl+C to stop program"
-        #     time.sleep(10);
+        #self.log("doing precalibration stuff")
+        if input >= 1 and input <= 6:
+            self.log("pre calibration - starting motor")
+            print "starting motor"
+            self.run_command("start motor")
+            self.log("pre calibration - start showprogress")
+            self.run_command("start showprogress")
+            self.log("Sleep 10 seconds")
+            print "Waiting for 10 seconds...Ctrl+C to stop program"
+            time.sleep(10);
 
     def get_autocal_info(self, autocal_info):
         camSN = raw_input("Enter Camera Serial Number: ")
@@ -612,20 +612,30 @@ class CalUI:
                         self.pre_calibration(ok)
                         autocal_info = {"cal": "", "camSN": "", "rect": None, "resume": None, "overwrite": None}
                         self.get_autocal_info_all(autocal_info)
+                        pr_autocal = cProfile.Profile()
+                        pr_autocal.enable()
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"], cwd=self.md_path)
+                        self.stop_profile(pr_autocal, "Autocal_stats.log", append=True)
                     if ok == 3:
                         self.pre_calibration(ok)
                         autogrid_info = {"resume": None, "overwrite": None, "key": ""}
                         self.get_autogrid_info(autogrid_info)
                         if len(autogrid_info["key"]) > 0:
+                            pr_autogrid = cProfile.Profile()
+                            pr_autogrid.enable()
                             autogrid.autogrid(autogrid_info['resume'], autogrid_info['overwrite'], autogrid_info["key"], cwd=self.md_path)
+                            self.stop_profile(pr_autogrid, "Autogrid_{0}_stats.log".format(autogrid_info["key"]), append=True)
                         else:
                             print "Error! key is blank."
                     if ok == 4:
                         cookgrid_info = {"key": ""}
+                        os.chdir(self.md_path)
                         self.get_cookgrid_gain_info(cookgrid_info)
                         if len(cookgrid_info["key"]) > 0:
+                            pr_cookgrid = cProfile.Profile()
+                            pr_cookgrid.enable()
                             cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
+                            self.stop_profile(pr_cookgrid, "Cookgrid_gain_{0}_stats.log".format(cookgrid_info["key"]), append=True)
                         else:
                             print "Error! key is blank."
                     if ok == 5:
@@ -633,12 +643,21 @@ class CalUI:
                         cookgrid_info = {"key": ""}
                         self.get_cookgrid_temp_info(cookgrid_info)
                         if len(cookgrid_info["key"]) > 0:
+                            pr_cookgrid = cProfile.Profile()
+                            pr_cookgrid.enable()
                             cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
+                            self.stop_profile(pr_cookgrid, "Cookgrid_temp_{0}_stats.log".format(cookgrid_info["key"]),
+                                              append=True)
                         else:
                             print "Error! key is blank."
                     if ok == 6:
+                        pr_metamap = cProfile.Profile()
+                        pr_metamap.enable()
                         metamap.makeMetaMap(cwd=self.md_path)
+                        self.stop_profile(pr_metamap, "Metamap_stats.log", append=True)
                     if ok == 7:
+                        pr_checkspots = cProfile.Profile()
+                        pr_checkspots.enable()
                         # checkspots
                         cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
                         checkspots.main(cs_args, cwd=self.md_path)
@@ -646,6 +665,7 @@ class CalUI:
                         checkspots.main(cs_args, cwd=self.md_path)
                         cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
                         checkspots.main(cs_args, cwd=self.md_path)
+                        self.stop_profile(pr_checkspots, "Checkspots_stats.log", append=True)
                     if ok == 8:
                         self.partial_calibration()
                 else:
