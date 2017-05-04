@@ -715,16 +715,16 @@ def main(args):
         calui = CalUI()
         calui.run()
 
-        # spackle & hotspot fix
+        # spackle & hotspot fix - used on gain map. but wont be needed on new 41 algorithm
 
         # checkspots
 
     finally:
         # check m390 temperature, if not at 581, set to 581 (hw_shutdown()?)
-        temp = autocalx.hw_gettemp()
-        if temp > 581:
-            print "M390 current temperature is > 581. Starting shutdown procedure."
-            autocalx.hw_shutdown()
+        # temp = autocalx.hw_gettemp()
+        # if temp > 581:
+        #     print "M390 current temperature is > 581. Starting shutdown procedure."
+        #     autocalx.hw_shutdown()
 
         calui.close_log_file()
 
