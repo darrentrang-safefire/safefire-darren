@@ -52,6 +52,7 @@ import checkspots
 
 FOLDER_STRUCTURE = "/cal40C"
 EXAMPLE_CAL = "example.cal"
+NAS_BACKUP = "M:\\darren\\test"
 
 pr = cProfile.Profile()
 pr.enable()
@@ -84,6 +85,9 @@ class CalUI:
         wd = ""
         while (True):
             wd = raw_input("Enter the path to cameraSN (ie. C:/safefire/X800000): ")
+            #strip trailing / or \ if provided
+            if wd[len(wd)-1] == "/" or wd[len(wd)-1] == "\\":
+                wd = wd[:len(wd)-1]
             if not os.path.exists(wd):
                 print "Could not find path {0}. Please try again.".format(wd)
             else:
@@ -166,16 +170,17 @@ class CalUI:
         return "completed"
 
 
-    def run_command(self, command):
+    def run_command(self, command, prnt=True):
         self.log("attempting to run custom command: {0}".format(command))
         command += "\n" #need this because prompt asks for "more?"
         # print r'running command: ', (command.encode('string-escape'))
         process = subprocess.Popen('cmd.exe', stdin=subprocess.PIPE, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate(command)
         if command != '\n':
-            process.stdout.flush()
             self.log("custom command success")
-            print stdout
+            if prnt:
+                process.stdout.flush()
+                print stdout
 
     def pre_calibration(self, input):
         print "doing precalibration stuff"
@@ -502,6 +507,12 @@ class CalUI:
         else:
             return "Unable to find choice"
 
+    def backup_to_NAS_drive(self):
+        camsn = self.cal_path[self.cal_path.rfind("/")+1:]
+        print "Backing up Camera config files. \nSaving {0} to {1}/{2}\nThis may take a few minutes.".format(self.md_path, NAS_BACKUP, camsn)
+        self.run_command("mkdir {0}\{1}".format(NAS_BACKUP, camsn))
+        self.run_command("robocopy {0} {1}/{2} /E".format(self.md_path, NAS_BACKUP, camsn),prnt=False)
+
     def main_menu(self):
         menu = '******************************************\n'
         menu += '* Choose command to run:                 *\n'
@@ -606,6 +617,10 @@ class CalUI:
                         cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
                         checkspots.main(cs_args, cwd=self.md_path)
                         self.stop_profile(pr_checkspots, "Spotcheck_stats.log")
+
+                        #backup to NAS drive
+                        self.log("Full calibration - Backing up to NAS drive")
+                        self.backup_to_NAS_drive()
 
                         return False
                     if ok == 2:
