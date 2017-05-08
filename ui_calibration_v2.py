@@ -52,7 +52,7 @@ import checkspots
 
 FOLDER_STRUCTURE = "/cal40C"
 EXAMPLE_CAL = "example.cal"
-NAS_BACKUP = "M:\\darren\\test"
+NAS_BACKUP = "M:\\darren\\test backup dir"
 
 pr = cProfile.Profile()
 pr.enable()
@@ -510,8 +510,8 @@ class CalUI:
     def backup_to_NAS_drive(self):
         camsn = self.cal_path[self.cal_path.rfind("/")+1:]
         print "Backing up Camera config files. \nSaving {0} to {1}/{2}\nThis may take a few minutes.".format(self.md_path, NAS_BACKUP, camsn)
-        self.run_command("mkdir {0}\{1}".format(NAS_BACKUP, camsn))
-        self.run_command("robocopy {0} {1}/{2} /E".format(self.md_path, NAS_BACKUP, camsn),prnt=False)
+        self.run_command("mkdir \"{0}\{1}\"".format(NAS_BACKUP, camsn))
+        self.run_command("robocopy \"{0}\" \"{1}/{2}\" /E".format(self.md_path, NAS_BACKUP, camsn),prnt=False)
 
     def main_menu(self):
         menu = '******************************************\n'
