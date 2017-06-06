@@ -383,13 +383,20 @@ class CalUI:
                         autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=full_cal)
                         self.stop_profile(pr_autogrid_gain, "Autogrid_gain_stats.log", append=True)
 
+                        # reload meta data
+                        self.load_md(self.md_path)
+
                     if ok <= 3:
                         self.log("Patial calbration - Cookgrid gains")
                         # Cookgrid -gain gains
                         cookgrid_info = {"key": "gains"}
+                        gains_completed_keys = []
+                        if hasattr(self.md, cookgrid_info["key"] + "_completed"):
+                            gains_completed = getattr(self.md, "{0}_completed".format(cookgrid_info["key"]))
+                            gains_completed_keys = list(gains_completed.keys())
                         pr_cookgrid_gain = cProfile.Profile()
                         pr_cookgrid_gain.enable()
-                        cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path)
+                        cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path, keys=gains_completed_keys)
                         self.stop_profile(pr_cookgrid_gain, "Cookgrid_gain_stats.log", append=True)
 
                     if ok <= 4:
@@ -685,13 +692,19 @@ class CalUI:
                         # checkspots
                         cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
                         #cs_args = ['-p', '45', '-f', 'spots.*#1.tif', '-a', '#1']
+                        #cs_args = ['-p', '67_spots', '-f', 'spots.*#1.tif', '-a', '#1']
                         checkspots.main(cs_args, cwd=self.md_path)
+
                         cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
                         #cs_args = ['-p', '45', '-f', 'spots.*#4.tif', '-a', '#4']
+                        #cs_args = ['-p', '67_spots', '-f', 'spots.*#4.tif', '-a', '#4']
                         checkspots.main(cs_args, cwd=self.md_path)
+
                         cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
                         #cs_args = ['-p', '45', '-f', 'spots.*#12.tif', '-a', '#12']
+                        #cs_args = ['-p', '67_spots', '-f', 'spots.*#12.tif', '-a', '#12']
                         checkspots.main(cs_args, cwd=self.md_path)
+
                         self.stop_profile(pr_checkspots, "Checkspots_stats.log", append=True)
                     if ok == 8:
                         self.partial_calibration()
