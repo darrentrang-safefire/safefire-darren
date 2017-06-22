@@ -21,6 +21,7 @@ from metadata import MetaData
 import misc
 from misc import PushDir
 import checkspots
+import badpixels
 
 #error code 9: user chose to cancel current operation
 #error code 101: warning no meta.data file found during initial startup
@@ -518,6 +519,50 @@ class CalUI:
         self.run_command("mkdir \"{0}\{1}\"".format(NAS_BACKUP, camsn))
         self.run_command("robocopy \"{0}\" \"{1}/{2}\" /E".format(self.md_path, NAS_BACKUP, camsn),prnt=False)
 
+    def nir_tweaker_check(self):
+        print "Did you run NIR tweaker? (y/n/s for skip)"
+        while True:
+            input = raw_input(">>> ")
+            if input.lower() == "y" or input.lower() == "s":
+                return True
+            elif input.lower() == "n":
+                return False
+            else:
+                print "Invalid input. Enter y/n/s only."
+
+    def badpixels_check(self):
+        print "Did you run badpixels? (y/n/s for skip)"
+        while True:
+            input = raw_input(">>> ")
+            if input.lower() == "y" or input.lower() == "s":
+                return True
+            elif input.lower() == "n":
+                while True:
+                    print "Run baxpixels now? (y/n)\nYou will be given 10 seconds to cover camera shutter before badpixel begins."
+                    input2 = raw_input(">>> ")
+                    if input2.lower() == "y":
+                        camSN = raw_input("Enter Camera Serial Number: ")
+                        camSN = camSN.upper()
+
+                        #run bad pixels
+                        for i in range(10,0,-1):
+                            print i,"..."
+                            time.sleep(1)
+                        self.run_badpixels(camSN)
+                        return True
+                    elif input2.lower() == "n":
+                        return False
+                    else:
+                        print "Invalid input. Enter y/n only."
+            else:
+                print "Invalid input. Enter y/n/s only."
+
+    def run_badpixels(self, camSN):
+        #call to badpixels
+        args = [camSN]
+        badpixels.main(args)
+
+
     def main_menu(self):
         menu = '******************************************\n'
         menu += '* Choose command to run:                 *\n'
@@ -551,6 +596,11 @@ class CalUI:
                         custom_command = raw_input("Enter custom command: ")
                         self.run_command(custom_command);
                     if ok == 1:
+                        if not self.nir_tweaker_check():
+                            raise SystemExit("Run NIR tweaker before full calibration. Returning to Main menu")
+                        if not self.badpixels_check():
+                            raise SystemExit("Run baxpixels before full calibration. Returning to Main menu")
+
                         self.log("Full calbration - pre calibration commands")
                         self.pre_calibration(ok)
 
