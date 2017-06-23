@@ -363,6 +363,11 @@ class CalUI:
 
                     if ok == 1:
                         # Autocal
+                        if not self.nir_tweaker_check():
+                            raise SystemExit("Run NIR tweaker before full calibration. Returning to Main menu")
+                        if not self.badpixels_check():
+                            raise SystemExit("Run baxpixels before full calibration. Returning to Main menu")
+
                         full_cal=True
                         self.log("Partial calbration - Autocal")
                         autocal_info = {"cal": "../example.cal", "camSN": ""}
