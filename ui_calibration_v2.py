@@ -23,6 +23,8 @@ from misc import PushDir
 import checkspots
 import badpixels
 
+#robotArm branch test
+
 #error code 9: user chose to cancel current operation
 #error code 101: warning no meta.data file found during initial startup
 
