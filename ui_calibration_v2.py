@@ -183,16 +183,16 @@ class CalUI:
 
     def pre_calibration(self, input):
         print "doing precalibration stuff"
-        #self.log("doing precalibration stuff")
-        if input >= 1 and input <= 6:
-            self.log("pre calibration - starting motor")
-            print "starting motor"
-            self.run_command("start motor")
-            self.log("pre calibration - start showprogress")
-            self.run_command("start showprogress")
-            self.log("Sleep 10 seconds")
-            print "Waiting for 10 seconds...Ctrl+C to stop program"
-            time.sleep(10);
+        self.log("doing precalibration stuff")
+        # if input >= 1 and input <= 6:
+        #     self.log("pre calibration - starting motor")
+        #     print "starting motor"
+        #     self.run_command("start motor")
+        #     self.log("pre calibration - start showprogress")
+        #     self.run_command("start showprogress")
+        #     self.log("Sleep 10 seconds")
+        #     print "Waiting for 10 seconds...Ctrl+C to stop program"
+        #     time.sleep(10);
 
     def get_autocal_info(self, autocal_info):
         camSN = raw_input("Enter Camera Serial Number: ")
@@ -379,6 +379,7 @@ class CalUI:
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=full_cal)
                         self.stop_profile(pr_autocal, "Autocal_stats.log", append=True)
 
+
                     if ok <= 2:
                         self.log("Partial calbration - Autogrid gain")
                         # Autogrid gain
@@ -405,6 +406,9 @@ class CalUI:
                         cookgrid.cookgrid_gain(cookgrid_info['key'], cwd=self.md_path, keys=gains_completed_keys)
                         self.stop_profile(pr_cookgrid_gain, "Cookgrid_gain_stats.log", append=True)
 
+                        # reload meta data
+                        self.load_md(self.md_path)
+
                     if ok <= 4:
                         self.log("Partial calbration - Autogrid spot")
                         # Autogrid spot
@@ -414,6 +418,9 @@ class CalUI:
                         autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=full_cal)
                         self.stop_profile(pr_autogrid_spot, "Autogrid_spot_stats.log", append=True)
 
+                        # reload meta data
+                        self.load_md(self.md_path)
+
                     if ok <= 5:
                         self.log("Partial calbration - Metamap make")
                         # Metamap make
@@ -421,6 +428,9 @@ class CalUI:
                         pr_metamap.enable()
                         metamap.makeMetaMap(cwd=self.md_path)
                         self.stop_profile(pr_metamap, "Metamap_stats.log", append=True)
+
+                        # reload meta data
+                        self.load_md(self.md_path)
 
                     if ok <= 6:
                         self.log("Partial calbration - Cookgrid spots")
@@ -431,16 +441,19 @@ class CalUI:
                         cookgrid.cookgrid_temp(cookgrid_info['key'], cwd=self.md_path)
                         self.stop_profile(pr_cookgrid_spots, "Cookgrid_spots_stats.log", append=True)
 
+                        # reload meta data
+                        self.load_md(self.md_path)
+
                     if ok <= 7:
                         self.log("Partial calibration - Checkspots")
                         pr_checkspots = cProfile.Profile()
                         pr_checkspots.enable()
                         # checkspots
-                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
+                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1', '-c']
                         checkspots.main(cs_args, cwd=self.md_path)
-                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
+                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4', '-c']
                         checkspots.main(cs_args, cwd=self.md_path)
-                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
+                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12', '-c']
                         checkspots.main(cs_args, cwd=self.md_path)
                         self.stop_profile(pr_checkspots, "Spotcheck_stats.log", append=True)
 
@@ -677,11 +690,11 @@ class CalUI:
                         self.log("Full calibration - Checkspots")
                         pr_checkspots = cProfile.Profile()
                         pr_checkspots.enable()
-                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
+                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1', '-c']
                         checkspots.main(cs_args, cwd=self.md_path)
-                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
+                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4', '-c']
                         checkspots.main(cs_args, cwd=self.md_path)
-                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
+                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12', '-c']
                         checkspots.main(cs_args, cwd=self.md_path)
                         self.stop_profile(pr_checkspots, "Spotcheck_stats.log")
 
@@ -698,6 +711,9 @@ class CalUI:
                         pr_autocal.enable()
                         autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"], cwd=self.md_path)
                         self.stop_profile(pr_autocal, "Autocal_stats.log", append=True)
+
+                        # reload meta data
+                        self.load_md(self.md_path)
                     if ok == 3:
                         self.pre_calibration(ok)
                         autogrid_info = {"resume": None, "overwrite": None, "key": ""}
@@ -709,6 +725,9 @@ class CalUI:
                             self.stop_profile(pr_autogrid, "Autogrid_{0}_stats.log".format(autogrid_info["key"]), append=True)
                         else:
                             print "Error! key is blank."
+
+                        # reload meta data
+                        self.load_md(self.md_path)
                     if ok == 4:
                         cookgrid_info = {"key": ""}
                         os.chdir(self.md_path)
@@ -724,6 +743,9 @@ class CalUI:
                             self.stop_profile(pr_cookgrid, "Cookgrid_gain_{0}_stats.log".format(cookgrid_info["key"]), append=True)
                         else:
                             print "Error! key is blank."
+
+                            # reload meta data
+                            self.load_md(self.md_path)
                     if ok == 5:
                         os.chdir(self.md_path)
                         cookgrid_info = {"key": ""}
@@ -736,6 +758,9 @@ class CalUI:
                                               append=True)
                         else:
                             print "Error! key is blank."
+
+                        # reload meta data
+                        self.load_md(self.md_path)
                     if ok == 6:
                         pr_metamap = cProfile.Profile()
                         pr_metamap.enable()
@@ -745,20 +770,21 @@ class CalUI:
                         pr_checkspots = cProfile.Profile()
                         pr_checkspots.enable()
                         # checkspots
-                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1']
+                        cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1', '-c']
                         #cs_args = ['-p', '45', '-f', 'spots.*#1.tif', '-a', '#1']
                         #cs_args = ['-p', '67_spots', '-f', 'spots.*#1.tif', '-a', '#1']
                         checkspots.main(cs_args, cwd=self.md_path)
 
-                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4']
+                        cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4', '-c']
                         #cs_args = ['-p', '45', '-f', 'spots.*#4.tif', '-a', '#4']
                         #cs_args = ['-p', '67_spots', '-f', 'spots.*#4.tif', '-a', '#4']
                         checkspots.main(cs_args, cwd=self.md_path)
 
-                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12']
+                        cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12', '-c']
                         #cs_args = ['-p', '45', '-f', 'spots.*#12.tif', '-a', '#12']
                         #cs_args = ['-p', '67_spots', '-f', 'spots.*#12.tif', '-a', '#12']
                         checkspots.main(cs_args, cwd=self.md_path)
+
 
                         self.stop_profile(pr_checkspots, "Checkspots_stats.log", append=True)
                     if ok == 8:
