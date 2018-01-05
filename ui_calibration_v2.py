@@ -1,4 +1,3 @@
-#now writing to master to create a merge conflict
 import sys
 import imp
 import string
@@ -23,43 +22,23 @@ from misc import PushDir
 import checkspots
 import badpixels
 
-#robotArm branch test
-
-#error code 9: user chose to cancel current operation
-#error code 101: warning no meta.data file found during initial startup
-
-#running full calibration from main menu requirements:
-#   example.cal must be located 1 directory back (../example.cal)
-#   use default keys "gain" and "spot", do not prompt to ask
-#   only thing asked for is the cam SN
-#   THIS IS LIKE THIS SO THAT THE USER CAN KICK IT OFF AND COME BACK WHEN ITS DONE
-
-#running start calibration from... from main menu requirements:
-#   example.cal must be located 1 directory back (../example.cal)
-#   use default keys "gain" and "spot", do not prompt to ask
-#   only thing asked for is cam SN (IF USER ENTERED 1 IN SUB MENU)
-#   THIS IS LIKE THIS SO THAT THE USER CAN KICK IT OFF AND COME BACK WHEN ITS DONE
-
-# meta.data checks only occur when doing single commands from main menu
-
-#file structure must be
-# /camera SN
-#       /cal40C     ---> meta.data and cal files stored in here
-#       example.cal ---> this file must be here for autocal
-
-#ask for path to /camSN user wants to work out of. look for meta.data in /camSN/cal40C/. doesnt matter if path
-#ends with a "/" or not. path is not case sensitive
+import ur_server
+from ur_server import URConnection
 
 
 FOLDER_STRUCTURE = "/cal40C"
 EXAMPLE_CAL = "example.cal"
 NAS_BACKUP = "M:\\darren\\test backup dir"
+UR_SERVER_IP = "192.168.50.107"
+UR_SERVER_PORT = 30000
 
 pr = cProfile.Profile()
 pr.enable()
 
 class CalUI:
     def __init__(self):
+        self.ur_config_path = self.set_ur_config_path()
+        self.ur_connection = URConnection(UR_SERVER_IP, UR_SERVER_PORT, self.ur_config_path)
         self.cal_path = self.get_working_directory()
 
         self.log_file = open(os.path.join(self.cal_path, 'ui_calibration.log'), 'a')
@@ -68,6 +47,11 @@ class CalUI:
 
         self.md_path = self.cal_path + FOLDER_STRUCTURE
         self.load_md(self.md_path)
+
+    def init2(self):
+        #testing UR tcp/ip connection
+        #print self.ur_connection.get_current_tcp_location()
+        self.ur_connection.calculate_full_grid()
 
     def stop_profile(self, pr, logfile, append=False):
         pr.disable()
@@ -81,6 +65,20 @@ class CalUI:
         else:
             file = open(os.path.join(self.md_path, logfile), 'w')
         file.write(s.getvalue())
+
+    def set_ur_config_path(self):
+        path = ""
+        while (True):
+            path = raw_input("Enter the path to UR config file (ie. M:\\darren\\robot_arm\\server_client_modules\\starting_poses.config): ")
+            # strip trailing / or \ if provided
+            if path[len(path) - 1] == "/" or path[len(path) - 1] == "\\":
+                path = path[:len(path) - 1]
+            if not os.path.exists(path):
+                print "Could not find file in path {0}. Please try again.".format(path)
+            else:
+                break
+
+        return path
 
     def get_working_directory(self):
         wd = ""
@@ -378,7 +376,7 @@ class CalUI:
                             autocal_info["cal"] = os.path.join(self.cal_path, EXAMPLE_CAL)
                         pr_autocal = cProfile.Profile()
                         pr_autocal.enable()
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=full_cal)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=full_cal, connection=self.ur_connection)
                         self.stop_profile(pr_autocal, "Autocal_stats.log", append=True)
 
 
@@ -582,7 +580,6 @@ class CalUI:
         args = [camSN]
         badpixels.main(args)
 
-
     def main_menu(self):
         menu = '******************************************\n'
         menu += '* Choose command to run:                 *\n'
@@ -633,7 +630,7 @@ class CalUI:
                         #start to gather stats
                         pr_autocal = cProfile.Profile()
                         pr_autocal.enable()
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=True)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], rect=None, resume=None, overwrite=None, cwd=self.md_path, full_cal=True, connection=self.ur_connection)
                         self.stop_profile(pr_autocal, "Autocal_stats.log")
 
                         self.log("Full calbration - Autogrid gain")
@@ -688,7 +685,6 @@ class CalUI:
                         self.stop_profile(pr_cookgrid_spots, "Cookgrid_spots_stats.log")
 
                         #checkspots
-                        dump123 = 111 #REPLACE THE COOKED SPOTS IMAGES
                         self.log("Full calibration - Checkspots")
                         pr_checkspots = cProfile.Profile()
                         pr_checkspots.enable()
@@ -711,7 +707,7 @@ class CalUI:
                         self.get_autocal_info_all(autocal_info)
                         pr_autocal = cProfile.Profile()
                         pr_autocal.enable()
-                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"], cwd=self.md_path)
+                        autocal.autocal(autocal_info["cal"], autocal_info["camSN"], autocal_info["rect"], autocal_info["resume"], autocal_info["overwrite"], cwd=self.md_path, connection=self.ur_connection)
                         self.stop_profile(pr_autocal, "Autocal_stats.log", append=True)
 
                         # reload meta data
@@ -773,18 +769,12 @@ class CalUI:
                         pr_checkspots.enable()
                         # checkspots
                         cs_args = ['-p', '14', '-f', 'spots.*#1.tif', '-a', '#1', '-c']
-                        #cs_args = ['-p', '45', '-f', 'spots.*#1.tif', '-a', '#1']
-                        #cs_args = ['-p', '67_spots', '-f', 'spots.*#1.tif', '-a', '#1']
                         checkspots.main(cs_args, cwd=self.md_path)
 
                         cs_args = ['-p', '14', '-f', 'spots.*#4.tif', '-a', '#4', '-c']
-                        #cs_args = ['-p', '45', '-f', 'spots.*#4.tif', '-a', '#4']
-                        #cs_args = ['-p', '67_spots', '-f', 'spots.*#4.tif', '-a', '#4']
                         checkspots.main(cs_args, cwd=self.md_path)
 
                         cs_args = ['-p', '14', '-f', 'spots.*#12.tif', '-a', '#12', '-c']
-                        #cs_args = ['-p', '45', '-f', 'spots.*#12.tif', '-a', '#12']
-                        #cs_args = ['-p', '67_spots', '-f', 'spots.*#12.tif', '-a', '#12']
                         checkspots.main(cs_args, cwd=self.md_path)
 
 
@@ -832,23 +822,24 @@ class CalUI:
 
 def main(args):
     try:
-        # bad pixels
-        # Firmware updater
-        # NIR parameter tweaker
         calui = CalUI()
+        #calui.init2()
         calui.run()
-
-        # spackle & hotspot fix - used on gain map. but wont be needed on new 41 algorithm
-
-        # checkspots
-
+    except AssertionError as ae:
+        err_msg = ae.message
+        err_args = ae.args.__str__()
+        print "Assertion Error! - ", ae.message
+        calui.log("Assertion Error! - {0}".format(ae.message))
+        if hasattr(ae, "strerror"):
+            print ae.strerror
+    except Exception as ex:
+        err_msg = ex.message
+        err_args = ex.args.__str__()
+        print ex.message
+        calui.log("Exception! - {0}".format(ex.message))
+        if hasattr(ex, "strerror"):
+            print ex.strerror
     finally:
-        # check m390 temperature, if not at 581, set to 581 (hw_shutdown()?)
-        # temp = autocalx.hw_gettemp()
-        # if temp > 581:
-        #     print "M390 current temperature is > 581. Starting shutdown procedure."
-        #     autocalx.hw_shutdown()
-
         calui.close_log_file()
 
         pr.disable()
