@@ -29,7 +29,7 @@ from ur_server import URConnection
 FOLDER_STRUCTURE = "/cal40C"
 EXAMPLE_CAL = "example.cal"
 NAS_BACKUP = "M:\\darren\\test backup dir"
-UR_SERVER_IP = "192.168.50.107"
+UR_SERVER_IP = "192.168.50.111" #set this to local ip address that will run ui_calibration_v2.py. do the same in polyscope
 UR_SERVER_PORT = 30000
 
 pr = cProfile.Profile()
@@ -47,11 +47,6 @@ class CalUI:
 
         self.md_path = self.cal_path + FOLDER_STRUCTURE
         self.load_md(self.md_path)
-
-    def init2(self):
-        #testing UR tcp/ip connection
-        #print self.ur_connection.get_current_tcp_location()
-        self.ur_connection.calculate_full_grid()
 
     def stop_profile(self, pr, logfile, append=False):
         pr.disable()
@@ -384,10 +379,9 @@ class CalUI:
                         self.log("Partial calbration - Autogrid gain")
                         # Autogrid gain
                         autogrid_gain_info = {"resume": None, "overwrite": None, "key": "gain"}
-                        #autogrid_gain_info = {"resume": True, "overwrite": None, "key": "gain"}
                         pr_autogrid_gain = cProfile.Profile()
                         pr_autogrid_gain.enable()
-                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=full_cal)
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=full_cal, connection=self.ur_connection)
                         self.stop_profile(pr_autogrid_gain, "Autogrid_gain_stats.log", append=True)
 
                         # reload meta data
@@ -415,7 +409,7 @@ class CalUI:
                         autogrid_spot_info = {"resume": None, "overwrite": None, "key": "spot"}
                         pr_autogrid_spot = cProfile.Profile()
                         pr_autogrid_spot.enable()
-                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=full_cal)
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=full_cal, connection=self.ur_connection)
                         self.stop_profile(pr_autogrid_spot, "Autogrid_spot_stats.log", append=True)
 
                         # reload meta data
@@ -593,6 +587,11 @@ class CalUI:
         menu += '* 8. Calibrate starting from...          *\n'
         menu += '* 9. Exit                                *\n'
         menu += '*                                        *\n'
+        menu += '* 10. Calculate Full Grid                *\n'
+        menu += '* 11. Move to pose                       *\n'
+        menu += '* 12. Move to theoretical position       *\n'
+        menu += '* 13. Get current TCP location           *\n'
+        menu += '*                                        *\n'
         menu += '* 0. Custom Command                      *\n'
         menu += '******************************************'
         prompt = '*>>> '
@@ -639,7 +638,7 @@ class CalUI:
                         # start to gather stats
                         pr_autogrid_gain = cProfile.Profile()
                         pr_autogrid_gain.enable()
-                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=True)
+                        autogrid.autogrid(autogrid_gain_info['resume'], autogrid_gain_info['overwrite'], autogrid_gain_info["key"], cwd=self.md_path, full_cal=True, connection=self.ur_connection)
                         self.stop_profile(pr_autogrid_gain, "Autogrid_gain_stats.log")
 
                         #reload meta data
@@ -664,7 +663,7 @@ class CalUI:
                         # start to gather stats
                         pr_autogrid_spot = cProfile.Profile()
                         pr_autogrid_spot.enable()
-                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=True)
+                        autogrid.autogrid(autogrid_spot_info['resume'], autogrid_spot_info['overwrite'], autogrid_spot_info["key"], cwd=self.md_path, full_cal=True, connection=self.ur_connection)
                         self.stop_profile(pr_autogrid_spot, "Autogrid_spot_stats.log")
 
                         self.log("Full calbration - Metamap make")
@@ -719,7 +718,7 @@ class CalUI:
                         if len(autogrid_info["key"]) > 0:
                             pr_autogrid = cProfile.Profile()
                             pr_autogrid.enable()
-                            autogrid.autogrid(autogrid_info['resume'], autogrid_info['overwrite'], autogrid_info["key"], cwd=self.md_path)
+                            autogrid.autogrid(autogrid_info['resume'], autogrid_info['overwrite'], autogrid_info["key"], cwd=self.md_path, connection=self.ur_connection)
                             self.stop_profile(pr_autogrid, "Autogrid_{0}_stats.log".format(autogrid_info["key"]), append=True)
                         else:
                             print "Error! key is blank."
@@ -781,6 +780,24 @@ class CalUI:
                         self.stop_profile(pr_checkspots, "Checkspots_stats.log", append=True)
                     if ok == 8:
                         self.partial_calibration()
+                elif ok == 10:
+                    print "\nCaluclating full grid"
+                    if not hasattr(self.ur_connection, "robot_grid_positions") or len(self.ur_connection.robot_grid_positions) < 1:
+                        self.ur_connection.calculate_full_grid()
+                    for i in range(len(self.ur_connection.robot_grid_positions)):
+                        print "{0} = {1}".format(self.ur_connection.theoretical_grid_positions[i],
+                                                 self.ur_connection.robot_grid_positions[i])
+                elif ok == 11:
+                    pose_str = raw_input("Enter pose to move to in format 'p[x,y,z,rx,ry,rz]' ")
+                    self.ur_connection.move_robot_arm(0,0,wait=1, pose=pose_str)
+                elif ok == 12:
+                    theo_pos_x = raw_input("Enter X coordinate to move to:  ")
+                    theo_pos_y = raw_input("Enter Y coordinate to move to:  ")
+                    self.ur_connection.move_robot_arm(int(theo_pos_x), int(theo_pos_y), wait=1)
+                elif ok == 13:
+                    approx_pos = self.ur_connection.get_current_location()
+                    current_tcp_location = self.ur_connection.get_current_tcp_location()
+                    print "current tcp location = {0}. approximately at {1}".format(current_tcp_location, approx_pos)
                 else:
                     print "Error: Please pick 0-9 only"
             except RuntimeError as rte:
@@ -794,7 +811,7 @@ class CalUI:
                 self.log(err_args)
                 #pass
             except ValueError as ve:
-                msg = "Error: Enter numbers only or (q/Q) to quit"
+                msg = "Error: Enter numbers only or (Q) to quit"
                 err_msg = ve.message
                 err_args = ve.args.__str__()
                 print ve.message
@@ -823,7 +840,6 @@ class CalUI:
 def main(args):
     try:
         calui = CalUI()
-        #calui.init2()
         calui.run()
     except AssertionError as ae:
         err_msg = ae.message
